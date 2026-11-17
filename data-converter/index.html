@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exhibition Artworks — Spreadsheet to JSON Converter</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- SheetJS for .xlsx, .xls, .csv parsing -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <!-- Google Fonts: Inter & Newsreader for editorial gallery feel -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gallery: {
+              bg: '#FAF8F5',
+              surface: '#FFFFFF',
+              subtle: '#F3EFE9',
+              border: '#E5DFD5',
+              borderStrong: '#CFC6B8',
+              ink: '#1C1A17',
+              muted: '#665F56',
+              accent: '#2C2620',
+              accentHover: '#433B32',
+              warnBg: '#FEF7EC',
+              warnBorder: '#F2D29B',
+              warnText: '#8A5300',
+              okBg: '#EEF7F1',
+              okBorder: '#B8DEC5',
+              okText: '#1E5E35'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            serif: ['Newsreader', 'Georgia', 'serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      background-color: #FAF8F5;
+      color: #1C1A17;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    /* Custom subtle scrollbar for JSON output */
+    .json-scroll::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    .json-scroll::-webkit-scrollbar-track {
+      background: #181614;
+    }
+    .json-scroll::-webkit-scrollbar-thumb {
+      background: #3A352F;
+      border-radius: 9999px;
+    }
+    .json-scroll::-webkit-scrollbar-thumb:hover {
+      background: #524B42;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-gallery-accent selection:text-white">
+  <!-- Editorial Top Header -->
+  <header class="border-b border-gallery-border bg-gallery-surface/90 backdrop-blur-sm sticky top-0 z-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="flex items-baseline gap-3">
+        <span class="inline-block w-2 h-2 rounded-full bg-gallery-accent self-center"></span>
+        <div>
+          <h1 class="font-serif text-xl sm:text-2xl font-medium tracking-tight text-gallery-ink">
+            Exhibition Artworks — Spreadsheet &amp; HTML to JSON Converter
+          </h1>
+          <p class="text-xs sm:text-sm text-gallery-muted">
+            Convert spreadsheet documents (.xlsx, .csv) or webpage HTML tables into structured exhibition JSON
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2.5 self-start sm:self-auto">
+        <button
+          id="loadSampleBtn"
+          type="button"
+          class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium bg-gallery-subtle text-gallery-ink border border-gallery-border hover:border-gallery-borderStrong hover:bg-[#EAE3D9] transition-colors cursor-pointer"
+        >
+          Load Sample Spreadsheet
+        </button>
+        <button
+          id="resetAllBtn"
+          type="button"
+          class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-gallery-muted hover:text-gallery-ink border border-transparent hover:border-gallery-border rounded-lg transition-colors cursor-pointer"
+        >
+          Clear
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Responsive Two-Column Workspace -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+      
+      <!-- Left Column: Controls, Upload, Column Mapping & Row Preview (7 cols) -->
+      <div class="lg:col-span-7 space-y-6">
+        
+        <!-- 1. Manual Exhibition Name Card -->
+        <section class="bg-gallery-surface border border-gallery-border rounded-2xl p-5 sm:p-6 shadow-[0_1px_2px_rgba(28,26,23,0.04)]">
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <label for="exhibitionNameInput" class="block text-sm font-semibold text-gallery-ink">
+              1. Exhibition Name <span class="text-amber-700">*</span>
+            </label>
+            <span class="text-xs font-mono text-gallery-muted bg-gallery-subtle px-2 py-0.5 rounded-md">
+              exhibition.name
+            </span>
+          </div>
+          <p class="text-xs text-gallery-muted mb-3">
+            Enter the exhibition title manually. This sets <code class="font-mono text-gallery-ink">exhibition.name</code> and the default download filename.
+          </p>
+          <input
+            id="exhibitionNameInput"
+            type="text"
+            placeholder="SITE 2022"
+            autocomplete="off"
+            class="w-full px-4 py-3 rounded-xl bg-gallery-bg border border-gallery-border text-gallery-ink placeholder:text-gallery-muted/60 text-base focus:outline-none focus:ring-2 focus:ring-gallery-accent/20 focus:border-gallery-accent transition-all"
+          />
+        </section>
+
+        <!-- 2. Source Mode Switcher & Input Card -->
+        <section class="bg-gallery-surface border border-gallery-border rounded-2xl p-5 sm:p-6 shadow-[0_1px_2px_rgba(28,26,23,0.04)]">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div>
+              <h2 class="text-sm font-semibold text-gallery-ink">
+                2. Data Source Input
+              </h2>
+              <p id="sourceSubtitle" class="text-xs text-gallery-muted mt-0.5">
+                Choose between uploading a spreadsheet or pasting webpage HTML.
+              </p>
+            </div>
+
+            <!-- Segmented Mode Switcher -->
+            <div class="inline-flex p-1 rounded-xl bg-gallery-subtle border border-gallery-border self-start sm:self-auto" role="tablist" aria-label="Source format">
+              <button
+                id="modeSpreadsheetBtn"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-gallery-surface text-gallery-ink shadow-sm cursor-pointer"
+              >
+                Spreadsheet (.xlsx / .csv)
+              </button>
+              <button
+                id="modeHtmlBtn"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-gallery-muted hover:text-gallery-ink cursor-pointer"
+              >
+                Webpage HTML
+              </button>
+            </div>
+          </div>
+
+          <!-- SPREADSHEET MODE PANEL -->
+          <div id="spreadsheetInputPanel">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <p class="text-xs text-gallery-muted">
+                Upload an Excel or CSV file. The first sheet is parsed automatically; multi-sheet workbooks can be switched on the right.
+              </p>
+              <div id="sheetSelectorWrapper" class="hidden items-center gap-2">
+                <label for="sheetSelect" class="text-xs text-gallery-muted">Sheet:</label>
+                <select
+                  id="sheetSelect"
+                  class="text-xs bg-gallery-bg border border-gallery-border rounded-lg px-2.5 py-1.5 text-gallery-ink focus:outline-none focus:border-gallery-accent"
+                ></select>
+              </div>
+            </div>
+
+            <!-- Dropzone -->
+            <div
+              id="dropzone"
+              role="button"
+              tabindex="0"
+              aria-label="Upload spreadsheet file"
+              class="border-2 border-dashed border-gallery-borderStrong hover:border-gallery-accent bg-gallery-bg/70 hover:bg-gallery-subtle/60 rounded-xl p-6 text-center transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-gallery-accent/25"
+            >
+              <input
+                id="fileInput"
+                type="file"
+                accept=".xlsx,.xls,.csv,.numbers,.gsheet"
+                class="hidden"
+              />
+              <div class="mx-auto w-10 h-10 rounded-full bg-gallery-surface border border-gallery-border flex items-center justify-center mb-3 text-gallery-accent">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
+                </svg>
+              </div>
+              <p class="text-sm font-medium text-gallery-ink">
+                Drag &amp; drop your spreadsheet here, or <span class="underline underline-offset-2">browse files</span>
+              </p>
+              <p class="text-xs text-gallery-muted mt-1">
+                Supports <span class="font-mono">.xlsx</span>, <span class="font-mono">.xls</span>, and <span class="font-mono">.csv</span>
+              </p>
+            </div>
+
+            <!-- Active File Status Pill -->
+            <div id="fileStatusBar" class="hidden mt-3.5 px-3.5 py-2.5 rounded-xl bg-gallery-subtle border border-gallery-border flex items-center justify-between gap-3 text-xs">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="inline-block w-2 h-2 rounded-full bg-emerald-600 shrink-0"></span>
+                <span id="fileStatusName" class="font-medium text-gallery-ink truncate"></span>
+                <span id="fileStatusMeta" class="text-gallery-muted shrink-0"></span>
+              </div>
+              <button
+                id="removeFileBtn"
+                type="button"
+                class="text-gallery-muted hover:text-gallery-ink underline shrink-0 cursor-pointer"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+
+          <!-- WEBPAGE HTML MODE PANEL -->
+          <div id="htmlInputPanel" class="hidden space-y-3.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <p class="text-xs text-gallery-muted">
+                Paste webpage HTML containing artist header blocks and artwork tables, or upload an <code class="font-mono text-gallery-ink">.html</code> file.
+              </p>
+              <div class="flex items-center gap-2">
+                <input
+                  id="htmlFileInput"
+                  type="file"
+                  accept=".html,.htm,.txt"
+                  class="hidden"
+                />
+                <button
+                  id="uploadHtmlFileBtn"
+                  type="button"
+                  class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-gallery-bg text-gallery-ink border border-gallery-border hover:border-gallery-borderStrong transition-colors cursor-pointer"
+                >
+                  Upload .html
+                </button>
+                <button
+                  id="loadSampleHtmlBtn"
+                  type="button"
+                  class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-gallery-subtle text-gallery-ink border border-gallery-border hover:border-gallery-borderStrong transition-colors cursor-pointer"
+                >
+                  Load Sample HTML
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label for="htmlSourceTextarea" class="sr-only">Webpage HTML Snippet</label>
+              <textarea
+                id="htmlSourceTextarea"
+                rows="8"
+                spellcheck="false"
+                placeholder='<div class="mb-6 flex justify-between items-center"><div><p class="text-xl font-semibold text-gray-700">Firstname Lastname</p>...</div></div>&#10;<table><thead><tr><th>ID</th><th>Title</th><th>Medium</th><th>Price</th><th>Dimensions</th></tr></thead><tbody>...</tbody></table>'
+                class="w-full p-3.5 rounded-xl bg-gallery-bg border border-gallery-border text-gallery-ink placeholder:text-gallery-muted/50 font-mono text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-gallery-accent/20 focus:border-gallery-accent transition-all"
+              ></textarea>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-gallery-muted bg-gallery-subtle/70 border border-gallery-border rounded-xl px-3.5 py-2.5">
+              <span>
+                Extracts <code class="font-mono text-gallery-ink">artist</code> from header blocks above each table, and maps table columns <code class="font-mono text-gallery-ink">ID → number</code>, <code class="font-mono text-gallery-ink">Title → title</code>, <code class="font-mono text-gallery-ink">Medium → material</code>, <code class="font-mono text-gallery-ink">Price → price</code>, <code class="font-mono text-gallery-ink">Dimensions → dimensions</code>.
+              </span>
+              <span id="htmlArtistCountBadge" class="font-mono text-gallery-ink shrink-0">0 artists detected</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. Column Mapping Card (Spreadsheet Mode Only) -->
+        <section id="columnMappingSection" class="bg-gallery-surface border border-gallery-border rounded-2xl p-5 sm:p-6 shadow-[0_1px_2px_rgba(28,26,23,0.04)]">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+            <h2 class="text-sm font-semibold text-gallery-ink">
+              3. Column Mapping &amp; Schema Options
+            </h2>
+            <span id="mappingStatusBadge" class="text-xs text-gallery-muted">
+              Waiting for spreadsheet…
+            </span>
+          </div>
+          <p class="text-xs text-gallery-muted mb-4">
+            Headers are auto-detected from your spreadsheet. Override any mapping below if your column names differ.
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5" id="mappingGrid">
+            <!-- Populated dynamically by JS -->
+          </div>
+
+          <!-- Schema Toggle -->
+          <div class="mt-5 pt-4 border-t border-gallery-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p class="text-xs font-medium text-gallery-ink">
+                Include optional <code class="font-mono">year</code> &amp; <code class="font-mono">image</code> fields
+              </p>
+              <p class="text-[11px] text-gallery-muted">
+                Off by default to match the standard <code class="font-mono">exhibition artworks.json</code> schema (<code class="font-mono">title</code>, <code class="font-mono">artist</code>, <code class="font-mono">dimensions</code>, <code class="font-mono">material</code>, <code class="font-mono">text</code>).
+              </p>
+            </div>
+            <label class="inline-flex items-center cursor-pointer shrink-0">
+              <input id="includeOptionalToggle" type="checkbox" class="sr-only peer" />
+              <div class="w-10 h-6 bg-gallery-borderStrong peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-gallery-accent/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gallery-accent relative"></div>
+              <span id="optionalToggleLabel" class="ml-2.5 text-xs font-medium text-gallery-muted">Off</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- 4. Parsed Rows Preview Card -->
+        <section class="bg-gallery-surface border border-gallery-border rounded-2xl p-5 sm:p-6 shadow-[0_1px_2px_rgba(28,26,23,0.04)]">
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <h2 id="previewSectionHeading" class="text-sm font-semibold text-gallery-ink">
+              4. Parsed Spreadsheet Rows
+            </h2>
+            <span id="rowCountBadge" class="text-xs font-mono bg-gallery-subtle text-gallery-muted px-2.5 py-1 rounded-full">
+              0 artworks
+            </span>
+          </div>
+
+          <div id="tableEmptyState" class="py-8 px-4 rounded-xl bg-gallery-bg border border-gallery-border text-center">
+            <p id="tableEmptyTitle" class="text-sm text-gallery-muted">No spreadsheet loaded yet.</p>
+            <p id="tableEmptyHint" class="text-xs text-gallery-muted/80 mt-1">Upload a file above or click <strong>Load Sample Spreadsheet</strong> to preview rows.</p>
+          </div>
+
+          <div id="tableWrapper" class="hidden overflow-x-auto rounded-xl border border-gallery-border">
+            <table class="min-w-full divide-y divide-gallery-border text-left text-xs">
+              <thead id="parsedTableHead" class="bg-gallery-subtle text-gallery-muted font-medium">
+                <tr>
+                  <th class="py-2.5 px-3 w-10">#</th>
+                  <th class="py-2.5 px-3">Title</th>
+                  <th class="py-2.5 px-3">Artist</th>
+                  <th class="py-2.5 px-3">Dimensions</th>
+                  <th class="py-2.5 px-3">Material</th>
+                  <th class="py-2.5 px-3">Text</th>
+                </tr>
+              </thead>
+              <tbody id="parsedTableBody" class="divide-y divide-gallery-border bg-gallery-surface">
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- Right Column: Validation Notices & Live Formatted JSON Output (5 cols) -->
+      <div class="lg:col-span-5 lg:sticky lg:top-20 space-y-4">
+        
+        <!-- Validation & Warning Messages -->
+        <div id="noticesContainer" class="space-y-2.5" aria-live="polite"></div>
+
+        <!-- JSON Output Panel -->
+        <section class="bg-[#181614] text-[#F5F2EB] rounded-2xl border border-[#2E2A24] shadow-[0_10px_30px_-10px_rgba(28,26,23,0.28)] overflow-hidden flex flex-col">
+          <!-- Panel Header -->
+          <div class="px-4 sm:px-5 py-3.5 bg-[#201D1A] border-b border-[#2E2A24] flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-mono uppercase tracking-wider text-[#C7BEB2]">
+                JSON Output: 
+              </span>
+              <span id="jsonFilenameHint" class="text-xs font-mono text-[#8F8578] hidden sm:inline">
+                exhibition.json
+              </span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button
+                id="copyJsonBtn"
+                type="button"
+                class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#2D2924] hover:bg-[#3A352E] text-[#F5F2EB] border border-[#3E3932] transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <svg id="copyIcon" class="w-3.5 h-3.5 text-[#D5CCC0]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span id="copyBtnText">Copy JSON</span>
+              </button>
+
+              <button
+                id="downloadJsonBtn"
+                type="button"
+                class="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-[#EFECE6] hover:bg-white text-[#181614] transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                </svg>
+                <span>Download JSON</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Code Viewport -->
+          <div class="p-4 sm:p-5 max-h-[70vh] overflow-auto json-scroll">
+            <pre id="jsonOutputPre" class="font-mono text-xs sm:text-[13px] leading-relaxed text-[#ECE7DE] whitespace-pre-wrap break-words"></pre>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="border-t border-gallery-border py-4 mt-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gallery-muted">
+      <span>Client-side conversion only — your data never leaves your browser.</span>
+      <span class="font-mono">Schema: exhibition.name + artworks[]</span>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // =========================================================================
+      // 1. Canonical Field Definitions & Auto-Detection Heuristics
+      // =========================================================================
+      const FIELD_SPECS = [
+        {
+          key: 'artist',
+          label: "Artist's name",
+          targetJson: 'artist',
+          required: true,
+          aliases: ["artist's name", "artists name", "artist name", "artist", "creator", "maker"]
+        },
+        {
+          key: 'text',
+          label: 'Artist statement',
+          targetJson: 'text[]',
+          required: false,
+          aliases: ["artist statement", "artist's statement", "statement", "text", "description", "wall text", "curatorial text"]
+        },
+        {
+          key: 'title',
+          label: 'Artwork title',
+          targetJson: 'title',
+          required: true,
+          aliases: ["artwork title", "title", "work title", "piece title", "name of work"]
+        },
+        {
+          key: 'dimensions',
+          label: 'Artwork dimensions',
+          targetJson: 'dimensions',
+          required: false,
+          aliases: ["artwork dimensions", "dimensions", "size", "measurements"]
+        },
+        {
+          key: 'material',
+          label: 'Artwork medium',
+          targetJson: 'material',
+          required: false,
+          aliases: ["artwork medium", "artwork material", "medium", "material", "materials", "technique"]
+        },
+        {
+          key: 'year',
+          label: 'Artwork year',
+          targetJson: 'year (opt)',
+          required: false,
+          aliases: ["artwork year", "year", "date", "creation year"]
+        },
+        {
+          key: 'image',
+          label: 'Image of artwork',
+          targetJson: 'image (opt)',
+          required: false,
+          aliases: ["image of artwork", "artwork image", "image", "image url", "filename", "file name", "photo"]
+        }
+      ];
+
+      // Sample dataset matching the attached `exhibition artworks.json`
+      const SAMPLE_HEADERS = [
+        "Artist's name",
+        "Artist statement",
+        "Image of artwork",
+        "Artwork title",
+        "Artwork year",
+        "Artwork medium",
+        "Artwork dimensions"
+      ];
+
+      const SAMPLE_ROWS = [
+        {
+          "Artist's name": "Masahisa Fukase",
+          "Artist statement": "This coarse-grain photograph by Fukase Masahisa is from a series exploring the dark, mysterious forms of ravens in various poses and settings. \nSome images capture a solitary bird, as in “Erimo Cape”; others depict flocks of birds in flight or settling on trees or buildings. In “Kanazawa,” the eyes of ravens glint eerily as single points of light against black heads.",
+          "Image of artwork": "kanazawa.jpg",
+          "Artwork title": "Kanazawa",
+          "Artwork year": "1976",
+          "Artwork medium": "Silver gelatin photograph",
+          "Artwork dimensions": "100 × 120 mm"
+        },
+        {
+          "Artist's name": "Nan Goldin",
+          "Artist statement": "In 1978, as a 25-year-old student at the School of the Museum of Fine Arts in Boston, Nan Goldin was awarded a $5,000 arts grant that enabled her to spend time in London.",
+          "Image of artwork": "self-portrait-scratched-back.jpg",
+          "Artwork title": "Self-Portrait with Scratched Back",
+          "Artwork year": "1980",
+          "Artwork medium": "C-type print",
+          "Artwork dimensions": "200 × 200 cm"
+        },
+        {
+          "Artist's name": "Masahisa Fukase",
+          "Artist statement": "The entire series…",
+          "Image of artwork": "erimo-cape-1976.jpg",
+          "Artwork title": "Erimo Cape, 1976",
+          "Artwork year": "1976",
+          "Artwork medium": "Silver gelatin photograph",
+          "Artwork dimensions": "200 × 300 mm "
+        },
+        {
+          "Artist's name": "Francesca Woodman",
+          "Artist statement": "Throughout her career…",
+          "Image of artwork": "on-being-an-angel.jpg",
+          "Artwork title": "On Being an Angel",
+          "Artwork year": "1976",
+          "Artwork medium": "Silver gelatin photograph",
+          "Artwork dimensions": "200 × 100 mm"
+        },
+        {
+          "Artist's name": "Chuck Close",
+          "Artist statement": "Exploring different modes of representation…",
+          "Image of artwork": "big-self-portrait.jpg",
+          "Artwork title": "Big Self-Portrait",
+          "Artwork year": "1967",
+          "Artwork medium": "acrylic on canvas",
+          "Artwork dimensions": "273 cm × 212.1 cm"
+        }
+      ];
+
+      // Sample Webpage HTML matching user's exact webpage structure
+      const SAMPLE_HTML_SNIPPET = `<div class="mb-6 flex justify-between items-center"><div><p class="text-xl font-semibold text-gray-700">Firstname Lastname</p><p class="text-lg text-gray-600">Painting</p></div><div class="flex items-center"><p class="text-xl font-semibold text-gray-700">SITE Map Number:</p><span class="ml-2 text-lg text-gray-600">15</span></div></div>
+<hr class="border-gray-300 my-6">
+<div class="overflow-x-auto"><table class="w-full border-collapse print:border-none"><thead><tr class="bg-gray-200 text-gray-700"><th class="p-4 text-lg">ID</th><th class="p-4 text-lg">Title</th><th class="p-4 text-lg">Medium</th><th class="p-4 text-lg">Price</th><th class="p-4 text-lg">Dimensions</th><th class="p-4 text-lg">Editions</th></tr></thead><tbody><tr class="text-gray-700"><td class="p-4 text-center text-lg" rowspan="1">300</td><td class="p-4 text-center text-lg" rowspan="1">Example title</td><td class="p-4 text-center text-lg" rowspan="1">Oil inks on cotton</td><td class="p-4 text-center text-lg" rowspan="1">$100</td><td class="p-4 text-center text-lg" rowspan="1">50 x 50cm</td><td class="p-4 flex justify-center gap-2"><div class="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center text-sm font-bold">1</div><div class="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center text-sm font-bold">2</div></td></tr></tbody></table></div>`;
+
+      // =========================================================================
+      // 2. Application State
+      // =========================================================================
+      const state = {
+        mode: 'spreadsheet', // 'spreadsheet' | 'html'
+        exhibitionName: '',
+        workbook: null,
+        sheetNames: [],
+        activeSheetName: '',
+        headers: [],
+        rawRows: [],
+        mappings: {}, // { fieldKey: headerName | '' }
+        includeOptional: false,
+        skippedEmptyRows: 0,
+        sourceLabel: '',
+        // Webpage HTML mode state
+        htmlInput: '',
+        htmlParsedArtworks: [],
+        htmlArtistsDetected: [],
+        htmlParseError: ''
+      };
+
+      // =========================================================================
+      // 3. DOM References
+      // =========================================================================
+      const el = {
+        exhibitionNameInput: document.getElementById('exhibitionNameInput'),
+        loadSampleBtn: document.getElementById('loadSampleBtn'),
+        resetAllBtn: document.getElementById('resetAllBtn'),
+        modeSpreadsheetBtn: document.getElementById('modeSpreadsheetBtn'),
+        modeHtmlBtn: document.getElementById('modeHtmlBtn'),
+        spreadsheetInputPanel: document.getElementById('spreadsheetInputPanel'),
+        htmlInputPanel: document.getElementById('htmlInputPanel'),
+        columnMappingSection: document.getElementById('columnMappingSection'),
+        sheetSelectorWrapper: document.getElementById('sheetSelectorWrapper'),
+        sheetSelect: document.getElementById('sheetSelect'),
+        dropzone: document.getElementById('dropzone'),
+        fileInput: document.getElementById('fileInput'),
+        fileStatusBar: document.getElementById('fileStatusBar'),
+        fileStatusName: document.getElementById('fileStatusName'),
+        fileStatusMeta: document.getElementById('fileStatusMeta'),
+        removeFileBtn: document.getElementById('removeFileBtn'),
+        htmlFileInput: document.getElementById('htmlFileInput'),
+        uploadHtmlFileBtn: document.getElementById('uploadHtmlFileBtn'),
+        loadSampleHtmlBtn: document.getElementById('loadSampleHtmlBtn'),
+        htmlSourceTextarea: document.getElementById('htmlSourceTextarea'),
+        htmlArtistCountBadge: document.getElementById('htmlArtistCountBadge'),
+        mappingStatusBadge: document.getElementById('mappingStatusBadge'),
+        mappingGrid: document.getElementById('mappingGrid'),
+        includeOptionalToggle: document.getElementById('includeOptionalToggle'),
+        optionalToggleLabel: document.getElementById('optionalToggleLabel'),
+        previewSectionHeading: document.getElementById('previewSectionHeading'),
+        rowCountBadge: document.getElementById('rowCountBadge'),
+        tableEmptyState: document.getElementById('tableEmptyState'),
+        tableEmptyTitle: document.getElementById('tableEmptyTitle'),
+        tableEmptyHint: document.getElementById('tableEmptyHint'),
+        tableWrapper: document.getElementById('tableWrapper'),
+        parsedTableHead: document.getElementById('parsedTableHead'),
+        parsedTableBody: document.getElementById('parsedTableBody'),
+        noticesContainer: document.getElementById('noticesContainer'),
+        jsonFilenameHint: document.getElementById('jsonFilenameHint'),
+        copyJsonBtn: document.getElementById('copyJsonBtn'),
+        copyBtnText: document.getElementById('copyBtnText'),
+        downloadJsonBtn: document.getElementById('downloadJsonBtn'),
+        jsonOutputPre: document.getElementById('jsonOutputPre')
+      };
+
+      // =========================================================================
+      // 4. Helper Functions
+      // =========================================================================
+      function normalizeHeader(str) {
+        return String(str || '')
+          .toLowerCase()
+          .replace(/[’']/g, "'")
+          .replace(/[^a-z0-9' ]+/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+
+      function slugifyFilename(name) {
+        const cleaned = String(name || 'exhibition')
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+        return (cleaned || 'exhibition') + '.json';
+      }
+
+      function escapeHtml(str) {
+        return String(str ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      function truncateText(str, maxLen = 70) {
+        const s = String(str ?? '');
+        return s.length > maxLen ? s.slice(0, maxLen) + '…' : s;
+      }
+
+      function autoDetectMappings(headers) {
+        const detected = {};
+        const usedHeaders = new Set();
+
+        // First pass: exact normalized alias match
+        for (const spec of FIELD_SPECS) {
+          detected[spec.key] = '';
+          for (const h of headers) {
+            if (usedHeaders.has(h)) continue;
+            const normH = normalizeHeader(h);
+            if (spec.aliases.includes(normH)) {
+              detected[spec.key] = h;
+              usedHeaders.add(h);
+              break;
+            }
+          }
+        }
+
+        // Second pass: substring match for unmapped fields
+        for (const spec of FIELD_SPECS) {
+          if (detected[spec.key]) continue;
+          for (const h of headers) {
+            if (usedHeaders.has(h)) continue;
+            const normH = normalizeHeader(h);
+            if (spec.aliases.some(alias => normH.includes(alias) || alias.includes(normH))) {
+              detected[spec.key] = h;
+              usedHeaders.add(h);
+              break;
+            }
+          }
+        }
+
+        return detected;
+      }
+
+      // =========================================================================
+      // 5. Webpage HTML Parser (DOMParser)
+      // =========================================================================
+      function extractArtistFromHeaderBlock(headerEl) {
+        if (!headerEl) return '';
+
+        // 1. Prefer the first <p> inside the left child container: div.mb-6.flex.justify-between > div:first-child > p:first-child
+        const firstInnerDiv = headerEl.querySelector(':scope > div:first-child');
+        if (firstInnerDiv) {
+          const firstP = firstInnerDiv.querySelector('p');
+          if (firstP) {
+            const candidate = firstP.textContent.replace(/\s+/g, ' ').trim();
+            if (candidate && !/^site\s*map\s*number\s*:?$/i.test(candidate)) {
+              return candidate;
+            }
+          }
+        }
+
+        // 2. Fallback: look for <p class="text-xl font-semibold text-gray-700"> (or any <p>) whose text is not "SITE Map Number:"
+        const paragraphs = Array.from(headerEl.querySelectorAll('p'));
+        for (const p of paragraphs) {
+          const txt = p.textContent.replace(/\s+/g, ' ').trim();
+          if (!txt) continue;
+          if (/^site\s*map\s*number\s*:?$/i.test(txt)) continue;
+          return txt;
+        }
+
+        return '';
+      }
+
+      function parseWebpageHtml(htmlString) {
+        const trimmed = String(htmlString || '').trim();
+        if (!trimmed) {
+          state.htmlParsedArtworks = [];
+          state.htmlArtistsDetected = [];
+          state.htmlParseError = '';
+          return;
+        }
+
+        try {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(trimmed, 'text/html');
+
+          const artworks = [];
+          const artistsSet = new Set();
+          let currentArtist = '';
+
+          // Walk all relevant header blocks and tables in document order so multi-artist pages associate each table with its preceding artist header
+          const nodes = doc.body.querySelectorAll('div.mb-6, table');
+
+          nodes.forEach((node) => {
+            if (node.tagName === 'DIV') {
+              // Verify it's an artist header block (e.g., has flex/justify-between or contains artist <p> tags)
+              const hasFlexHeader =
+                node.classList.contains('justify-between') ||
+                node.querySelector('p.text-xl, p.font-semibold');
+              if (hasFlexHeader) {
+                const extracted = extractArtistFromHeaderBlock(node);
+                if (extracted) {
+                  currentArtist = extracted;
+                }
+              }
+            } else if (node.tagName === 'TABLE') {
+              // Check if there's an immediate preceding sibling or ancestor-preceding header we might have missed
+              if (!currentArtist) {
+                let prev = node.parentElement ? node.parentElement.previousElementSibling : node.previousElementSibling;
+                while (prev) {
+                  if (prev.tagName === 'DIV' && prev.querySelector('p')) {
+                    const fallbackArtist = extractArtistFromHeaderBlock(prev);
+                    if (fallbackArtist) {
+                      currentArtist = fallbackArtist;
+                      break;
+                    }
+                  }
+                  prev = prev.previousElementSibling;
+                }
+              }
+
+              // Parse <thead> headers to map columns accurately
+              const headerCells = Array.from(node.querySelectorAll('thead th, thead td'));
+              const colMap = {
+                id: -1,
+                title: -1,
+                medium: -1,
+                price: -1,
+                dimensions: -1
+              };
+
+              if (headerCells.length > 0) {
+                headerCells.forEach((cell, idx) => {
+                  const hText = cell.textContent.replace(/\s+/g, ' ').trim().toLowerCase();
+                  if (hText === 'id' || hText === 'number' || hText === 'no' || hText === '#') {
+                    colMap.id = idx;
+                  } else if (hText.includes('title')) {
+                    colMap.title = idx;
+                  } else if (hText.includes('medium') || hText.includes('material')) {
+                    colMap.medium = idx;
+                  } else if (hText.includes('price')) {
+                    colMap.price = idx;
+                  } else if (hText.includes('dimension') || hText.includes('size')) {
+                    colMap.dimensions = idx;
+                  }
+                });
+              }
+
+              // Fallback to standard column indices (ID=0, Title=1, Medium=2, Price=3, Dimensions=4) if thead wasn't present
+              if (colMap.id === -1 && colMap.title === -1) {
+                colMap.id = 0;
+                colMap.title = 1;
+                colMap.medium = 2;
+                colMap.price = 3;
+                colMap.dimensions = 4;
+              }
+
+              // Parse <tbody> rows (or direct <tr> rows if no <tbody>)
+              const bodyRows = Array.from(node.querySelectorAll('tbody tr'));
+              const rowsToParse =
+                bodyRows.length > 0
+                  ? bodyRows
+                  : Array.from(node.querySelectorAll('tr')).filter((tr) => !tr.closest('thead'));
+
+              rowsToParse.forEach((tr) => {
+                const cells = Array.from(tr.querySelectorAll(':scope > td, :scope > th'));
+                if (cells.length === 0) return;
+
+                const getCellText = (colIdx) => {
+                  if (colIdx < 0 || colIdx >= cells.length) return '';
+                  return cells[colIdx].textContent.replace(/\s+/g, ' ').trim();
+                };
+
+                const numberVal = getCellText(colMap.id);
+                const titleVal = getCellText(colMap.title);
+                const materialVal = getCellText(colMap.medium);
+                const priceVal = getCellText(colMap.price);
+                const dimensionsVal = getCellText(colMap.dimensions);
+
+                // Skip completely empty rows
+                if (!numberVal && !titleVal && !materialVal && !priceVal && !dimensionsVal) {
+                  return;
+                }
+
+                if (currentArtist) {
+                  artistsSet.add(currentArtist);
+                }
+
+                artworks.push({
+                  number: numberVal,
+                  title: titleVal,
+                  artist: currentArtist,
+                  dimensions: dimensionsVal,
+                  material: materialVal,
+                  price: priceVal,
+                  text: []
+                });
+              });
+            }
+          });
+
+          state.htmlParsedArtworks = artworks;
+          state.htmlArtistsDetected = Array.from(artistsSet);
+          state.htmlParseError = '';
+        } catch (err) {
+          state.htmlParsedArtworks = [];
+          state.htmlArtistsDetected = [];
+          state.htmlParseError = `Failed to parse HTML: ${err.message || err}`;
+        }
+      }
+
+      // =========================================================================
+      // 6. Spreadsheet Parsing (SheetJS)
+      // =========================================================================
+      function loadSheetFromWorkbook(workbook, sheetName) {
+        try {
+          const worksheet = workbook.Sheets[sheetName];
+          if (!worksheet) {
+            throw new Error(`Sheet "${sheetName}" could not be found.`);
+          }
+
+          // Convert sheet to 2D array to inspect headers and rows cleanly
+          const aoa = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+          if (!aoa || aoa.length === 0) {
+            state.headers = [];
+            state.rawRows = [];
+            state.skippedEmptyRows = 0;
+            state.mappings = {};
+            renderAll();
+            return;
+          }
+
+          // Find first non-empty header row
+          let headerRowIndex = 0;
+          while (
+            headerRowIndex < aoa.length &&
+            aoa[headerRowIndex].every(cell => String(cell ?? '').trim() === '')
+          ) {
+            headerRowIndex++;
+          }
+
+          const rawHeaderRow = aoa[headerRowIndex] || [];
+          const headers = rawHeaderRow.map((cell, idx) => {
+            const trimmed = String(cell ?? '').trim();
+            return trimmed || `Column ${idx + 1}`;
+          });
+
+          const dataRows = [];
+          let skippedEmpty = 0;
+
+          for (let r = headerRowIndex + 1; r < aoa.length; r++) {
+            const rowArr = aoa[r];
+            const isEmpty = !rowArr || rowArr.every(cell => String(cell ?? '').trim() === '');
+            if (isEmpty) {
+              skippedEmpty++;
+              continue;
+            }
+            const obj = {};
+            headers.forEach((h, idx) => {
+              const val = rowArr[idx];
+              obj[h] = val === null || val === undefined ? '' : String(val);
+            });
+            dataRows.push(obj);
+          }
+
+          state.activeSheetName = sheetName;
+          state.headers = headers;
+          state.rawRows = dataRows;
+          state.skippedEmptyRows = skippedEmpty;
+          state.mappings = autoDetectMappings(headers);
+
+          renderAll();
+        } catch (err) {
+          showNotice('error', `Failed to parse spreadsheet: ${err.message || err}`);
+        }
+      }
+
+      function handleFileUpload(file) {
+        if (!file) return;
+
+        if (typeof XLSX === 'undefined') {
+          showNotice('error', 'Spreadsheet parser library (SheetJS) failed to load. Check your connection and reload.');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+
+            if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+              showNotice('error', 'The uploaded file does not contain any sheets.');
+              return;
+            }
+
+            state.workbook = workbook;
+            state.sheetNames = workbook.SheetNames;
+            state.sourceLabel = file.name;
+
+            // Populate sheet selector if multiple sheets exist
+            if (workbook.SheetNames.length > 1) {
+              el.sheetSelect.innerHTML = workbook.SheetNames
+                .map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`)
+                .join('');
+              el.sheetSelectorWrapper.classList.remove('hidden');
+              el.sheetSelectorWrapper.classList.add('flex');
+            } else {
+              el.sheetSelectorWrapper.classList.add('hidden');
+              el.sheetSelectorWrapper.classList.remove('flex');
+            }
+
+            loadSheetFromWorkbook(workbook, workbook.SheetNames[0]);
+          } catch (err) {
+            showNotice('error', `Could not read file "${file.name}". Please ensure it is a valid .xlsx, .xls, or .csv file.`);
+          }
+        };
+        reader.onerror = function () {
+          showNotice('error', `Error reading file "${file.name}".`);
+        };
+        reader.readAsArrayBuffer(file);
+      }
+
+      function handleHtmlFileUpload(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const text = String(e.target.result || '');
+          state.htmlInput = text;
+          el.htmlSourceTextarea.value = text;
+          parseWebpageHtml(text);
+          renderAll();
+        };
+        reader.onerror = function () {
+          showNotice('error', `Error reading HTML file "${file.name}".`);
+        };
+        reader.readAsText(file);
+      }
+
+      function loadSampleSpreadsheet() {
+        setSourceMode('spreadsheet', false);
+        state.workbook = null;
+        state.sheetNames = ['Artworks'];
+        state.activeSheetName = 'Artworks';
+        state.sourceLabel = 'sample-exhibition-artworks.xlsx (Simulated)';
+        state.headers = [...SAMPLE_HEADERS];
+        state.rawRows = SAMPLE_ROWS.map(r => ({ ...r }));
+        state.skippedEmptyRows = 0;
+        state.mappings = autoDetectMappings(state.headers);
+
+        el.sheetSelectorWrapper.classList.add('hidden');
+        el.sheetSelectorWrapper.classList.remove('flex');
+        renderAll();
+      }
+
+      function loadSampleHtml() {
+        setSourceMode('html', false);
+        state.htmlInput = SAMPLE_HTML_SNIPPET;
+        el.htmlSourceTextarea.value = SAMPLE_HTML_SNIPPET;
+        parseWebpageHtml(SAMPLE_HTML_SNIPPET);
+        renderAll();
+      }
+
+      function clearAll() {
+        state.exhibitionName = '';
+        state.workbook = null;
+        state.sheetNames = [];
+        state.activeSheetName = '';
+        state.headers = [];
+        state.rawRows = [];
+        state.mappings = {};
+        state.skippedEmptyRows = 0;
+        state.sourceLabel = '';
+        state.htmlInput = '';
+        state.htmlParsedArtworks = [];
+        state.htmlArtistsDetected = [];
+        state.htmlParseError = '';
+
+        el.exhibitionNameInput.value = '';
+        el.fileInput.value = '';
+        el.htmlFileInput.value = '';
+        el.htmlSourceTextarea.value = '';
+        el.sheetSelectorWrapper.classList.add('hidden');
+        el.sheetSelectorWrapper.classList.remove('flex');
+        renderAll();
+      }
+
+      function setSourceMode(newMode, shouldRender = true) {
+        state.mode = newMode;
+
+        const isHtml = newMode === 'html';
+        el.modeSpreadsheetBtn.setAttribute('aria-selected', String(!isHtml));
+        el.modeHtmlBtn.setAttribute('aria-selected', String(isHtml));
+
+        if (isHtml) {
+          el.modeHtmlBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-gallery-surface text-gallery-ink shadow-sm cursor-pointer';
+          el.modeSpreadsheetBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-gallery-muted hover:text-gallery-ink cursor-pointer';
+          el.spreadsheetInputPanel.classList.add('hidden');
+          el.htmlInputPanel.classList.remove('hidden');
+          el.columnMappingSection.classList.add('hidden');
+          el.loadSampleBtn.textContent = 'Load Sample HTML';
+          el.previewSectionHeading.textContent = '3. Parsed Webpage Artworks';
+        } else {
+          el.modeSpreadsheetBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-gallery-surface text-gallery-ink shadow-sm cursor-pointer';
+          el.modeHtmlBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-gallery-muted hover:text-gallery-ink cursor-pointer';
+          el.htmlInputPanel.classList.add('hidden');
+          el.spreadsheetInputPanel.classList.remove('hidden');
+          el.columnMappingSection.classList.remove('hidden');
+          el.loadSampleBtn.textContent = 'Load Sample Spreadsheet';
+          el.previewSectionHeading.textContent = '4. Parsed Spreadsheet Rows';
+        }
+
+        if (shouldRender) {
+          renderAll();
+        }
+      }
+
+      // =========================================================================
+      // 7. JSON Construction & Validation
+      // =========================================================================
+      function buildExhibitionPayload() {
+        const exhibitionName = state.exhibitionName.trim();
+
+        if (state.mode === 'html') {
+          return {
+            exhibition: {
+              name: exhibitionName
+            },
+            artworks: state.htmlParsedArtworks.map((art) => ({
+              number: art.number,
+              title: art.title,
+              artist: art.artist,
+              dimensions: art.dimensions,
+              material: art.material,
+              price: art.price,
+              text: Array.isArray(art.text) ? art.text : []
+            }))
+          };
+        }
+
+        const artworks = [];
+
+        for (const row of state.rawRows) {
+          const getMapped = (key) => {
+            const col = state.mappings[key];
+            if (!col) return '';
+            return String(row[col] ?? '').trim();
+          };
+
+          const title = getMapped('title');
+          const artist = getMapped('artist');
+          const dimensions = getMapped('dimensions');
+          const material = getMapped('material');
+          const statement = getMapped('text');
+          const year = getMapped('year');
+          const image = getMapped('image');
+
+          // Match attached `exhibition artworks.json` structure strictly by default
+          const item = {
+            title: title,
+            artist: artist,
+            dimensions: dimensions,
+            material: material,
+            text: statement ? [statement] : []
+          };
+
+          if (state.includeOptional) {
+            if (year) item.year = year;
+            if (image) item.image = image;
+          }
+
+          artworks.push(item);
+        }
+
+        return {
+          exhibition: {
+            name: exhibitionName
+          },
+          artworks: artworks
+        };
+      }
+
+      function showNotice(type, message) {
+        const div = document.createElement('div');
+        const styles =
+          type === 'error'
+            ? 'bg-red-50 border-red-200 text-red-800'
+            : type === 'warning'
+            ? 'bg-gallery-warnBg border-gallery-warnBorder text-gallery-warnText'
+            : 'bg-gallery-okBg border-gallery-okBorder text-gallery-okText';
+
+        div.className = `px-4 py-3 rounded-xl border text-xs flex items-start gap-2.5 ${styles}`;
+        div.innerHTML = `<span class="mt-0.5 font-bold">${type === 'error' ? '!' : type === 'warning' ? '•' : '✓'}</span><span>${escapeHtml(message)}</span>`;
+        el.noticesContainer.appendChild(div);
+      }
+
+      // =========================================================================
+      // 8. Rendering
+      // =========================================================================
+      function renderMappingGrid() {
+        if (!state.headers.length) {
+          el.mappingStatusBadge.textContent = 'Waiting for spreadsheet…';
+          el.mappingGrid.innerHTML = FIELD_SPECS.map(spec => `
+            <div class="p-3 rounded-xl bg-gallery-bg/60 border border-gallery-border opacity-65">
+              <div class="flex items-center justify-between text-xs mb-1.5">
+                <span class="font-medium text-gallery-ink">${escapeHtml(spec.label)}</span>
+                <span class="font-mono text-[11px] text-gallery-muted">→ ${escapeHtml(spec.targetJson)}</span>
+              </div>
+              <select disabled class="w-full text-xs rounded-lg border border-gallery-border bg-gallery-surface px-2.5 py-2 text-gallery-muted">
+                <option>Upload a spreadsheet first</option>
+              </select>
+            </div>
+          `).join('');
+          return;
+        }
+
+        const mappedCount = FIELD_SPECS.filter(s => Boolean(state.mappings[s.key])).length;
+        el.mappingStatusBadge.textContent = `${mappedCount} of ${FIELD_SPECS.length} columns mapped`;
+
+        el.mappingGrid.innerHTML = FIELD_SPECS.map(spec => {
+          const currentVal = state.mappings[spec.key] || '';
+          const optionsHtml = [
+            `<option value="">— Not mapped —</option>`,
+            ...state.headers.map(h => {
+              const selected = h === currentVal ? 'selected' : '';
+              return `<option value="${escapeHtml(h)}" ${selected}>${escapeHtml(h)}</option>`;
+            })
+          ].join('');
+
+          const reqBadge = spec.required
+            ? `<span class="text-[10px] uppercase tracking-wider font-semibold text-amber-800 bg-amber-100/80 px-1.5 py-0.5 rounded">Key</span>`
+            : '';
+
+          return `
+            <div class="p-3 rounded-xl bg-gallery-bg border border-gallery-border">
+              <div class="flex items-center justify-between gap-1 text-xs mb-1.5">
+                <span class="font-medium text-gallery-ink flex items-center gap-1.5">
+                  ${escapeHtml(spec.label)}
+                  ${reqBadge}
+                </span>
+                <span class="font-mono text-[11px] text-gallery-muted">→ ${escapeHtml(spec.targetJson)}</span>
+              </div>
+              <select
+                data-field-key="${escapeHtml(spec.key)}"
+                class="mapping-select w-full text-xs rounded-lg border border-gallery-border bg-gallery-surface px-2.5 py-2 text-gallery-ink focus:outline-none focus:ring-2 focus:ring-gallery-accent/20 focus:border-gallery-accent"
+              >
+                ${optionsHtml}
+              </select>
+            </div>
+          `;
+        }).join('');
+
+        // Attach change listeners to mapping dropdowns
+        el.mappingGrid.querySelectorAll('.mapping-select').forEach(selectEl => {
+          selectEl.addEventListener('change', (e) => {
+            const fieldKey = e.target.getAttribute('data-field-key');
+            state.mappings[fieldKey] = e.target.value;
+            renderAll();
+          });
+        });
+      }
+
+      function renderTablePreview(payload) {
+        const artworks = payload.artworks;
+        el.rowCountBadge.textContent = `${artworks.length} ${artworks.length === 1 ? 'artwork' : 'artworks'}`;
+
+        if (!artworks.length) {
+          el.tableEmptyState.classList.remove('hidden');
+          el.tableWrapper.classList.add('hidden');
+          el.parsedTableBody.innerHTML = '';
+
+          if (state.mode === 'html') {
+            el.tableEmptyTitle.textContent = 'No HTML artworks parsed yet.';
+            el.tableEmptyHint.innerHTML = 'Paste webpage HTML above or click <strong>Load Sample HTML</strong> to preview extracted works.';
+          } else {
+            el.tableEmptyTitle.textContent = 'No spreadsheet loaded yet.';
+            el.tableEmptyHint.innerHTML = 'Upload a file above or click <strong>Load Sample Spreadsheet</strong> to preview rows.';
+          }
+          return;
+        }
+
+        el.tableEmptyState.classList.add('hidden');
+        el.tableWrapper.classList.remove('hidden');
+
+        if (state.mode === 'html') {
+          el.parsedTableHead.innerHTML = `
+            <tr>
+              <th class="py-2.5 px-3">Number</th>
+              <th class="py-2.5 px-3">Title</th>
+              <th class="py-2.5 px-3">Artist</th>
+              <th class="py-2.5 px-3">Material</th>
+              <th class="py-2.5 px-3">Dimensions</th>
+              <th class="py-2.5 px-3">Price</th>
+            </tr>
+          `;
+
+          el.parsedTableBody.innerHTML = artworks
+            .map((art) => `
+              <tr class="hover:bg-gallery-bg/70 transition-colors">
+                <td class="py-2.5 px-3 font-mono text-gallery-ink font-medium">${escapeHtml(art.number) || '—'}</td>
+                <td class="py-2.5 px-3 font-medium text-gallery-ink">${escapeHtml(art.title) || '<span class="text-gallery-muted/60 italic">Empty</span>'}</td>
+                <td class="py-2.5 px-3 text-gallery-ink">${escapeHtml(art.artist) || '<span class="text-gallery-muted/60 italic">Empty</span>'}</td>
+                <td class="py-2.5 px-3 text-gallery-muted">${escapeHtml(art.material) || '—'}</td>
+                <td class="py-2.5 px-3 font-mono text-[11px] text-gallery-muted">${escapeHtml(art.dimensions) || '—'}</td>
+                <td class="py-2.5 px-3 font-mono text-gallery-ink">${escapeHtml(art.price) || '—'}</td>
+              </tr>
+            `)
+            .join('');
+          return;
+        }
+
+        el.parsedTableHead.innerHTML = `
+          <tr>
+            <th class="py-2.5 px-3 w-10">#</th>
+            <th class="py-2.5 px-3">Title</th>
+            <th class="py-2.5 px-3">Artist</th>
+            <th class="py-2.5 px-3">Dimensions</th>
+            <th class="py-2.5 px-3">Material</th>
+            <th class="py-2.5 px-3">Text</th>
+          </tr>
+        `;
+
+        el.parsedTableBody.innerHTML = artworks
+          .map((art, idx) => {
+            const textPreview = Array.isArray(art.text) && art.text.length > 0
+              ? truncateText(art.text[0], 55)
+              : '<span class="text-gallery-muted/60 italic">[]</span>';
+
+            return `
+              <tr class="hover:bg-gallery-bg/70 transition-colors">
+                <td class="py-2.5 px-3 font-mono text-gallery-muted">${idx + 1}</td>
+                <td class="py-2.5 px-3 font-medium text-gallery-ink">${escapeHtml(art.title) || '<span class="text-gallery-muted/60 italic">Empty</span>'}</td>
+                <td class="py-2.5 px-3 text-gallery-ink">${escapeHtml(art.artist) || '<span class="text-gallery-muted/60 italic">Empty</span>'}</td>
+                <td class="py-2.5 px-3 font-mono text-[11px] text-gallery-muted">${escapeHtml(art.dimensions) || '—'}</td>
+                <td class="py-2.5 px-3 text-gallery-muted">${escapeHtml(art.material) || '—'}</td>
+                <td class="py-2.5 px-3 text-gallery-muted">${textPreview}</td>
+              </tr>
+            `;
+          })
+          .join('');
+      }
+
+      function renderNotices(payload) {
+        el.noticesContainer.innerHTML = '';
+
+        if (state.mode === 'html' && state.htmlParseError) {
+          showNotice('error', state.htmlParseError);
+        }
+
+        if (!state.exhibitionName.trim()) {
+          showNotice('warning', 'Exhibition name is empty — enter it manually in Step 1 (e.g., "SITE 2022").');
+        }
+
+        if (state.mode === 'spreadsheet') {
+          if (state.rawRows.length > 0) {
+            if (!state.mappings.title) {
+              showNotice('warning', 'Column "Artwork title" is not mapped; title fields will be empty.');
+            }
+            if (!state.mappings.artist) {
+              showNotice('warning', 'Column "Artist\'s name" is not mapped; artist fields will be empty.');
+            }
+          }
+
+          if (state.skippedEmptyRows > 0) {
+            showNotice(
+              'warning',
+              `Skipped ${state.skippedEmptyRows} completely empty ${state.skippedEmptyRows === 1 ? 'row' : 'rows'} in the spreadsheet.`
+            );
+          }
+        } else {
+          if (state.htmlInput.trim() && payload.artworks.length === 0) {
+            showNotice('warning', 'No <table> rows were found in the pasted HTML snippet.');
+          } else if (payload.artworks.some((a) => !a.artist)) {
+            showNotice('warning', 'One or more tables had no preceding artist header block (<div class="mb-6 ...">); artist fields left empty.');
+          }
+        }
+
+        if (state.exhibitionName.trim() && payload.artworks.length > 0) {
+          showNotice(
+            'ok',
+            `Ready: ${payload.artworks.length} ${payload.artworks.length === 1 ? 'artwork' : 'artworks'} formatted for "${payload.exhibition.name}".`
+          );
+        }
+      }
+
+      function renderAll() {
+        // File status bar
+        if (state.sourceLabel) {
+          el.fileStatusBar.classList.remove('hidden');
+          el.fileStatusBar.classList.add('flex');
+          el.fileStatusName.textContent = state.sourceLabel;
+          el.fileStatusMeta.textContent = `(${state.rawRows.length} rows, ${state.headers.length} cols)`;
+        } else {
+          el.fileStatusBar.classList.add('hidden');
+          el.fileStatusBar.classList.remove('flex');
+        }
+
+        // HTML artist counter badge
+        const artistCount = state.htmlArtistsDetected.length;
+        el.htmlArtistCountBadge.textContent = `${artistCount} ${artistCount === 1 ? 'artist' : 'artists'} detected`;
+
+        // Optional fields toggle label
+        el.optionalToggleLabel.textContent = state.includeOptional ? 'On' : 'Off';
+        el.optionalToggleLabel.className = state.includeOptional
+          ? 'ml-2.5 text-xs font-semibold text-gallery-ink'
+          : 'ml-2.5 text-xs font-medium text-gallery-muted';
+
+        // Filename hint
+        const outFilename = `Exhibition-Artworks-${slugifyFilename(state.exhibitionName || 'untitled')}`;
+        el.jsonFilenameHint.textContent = `— ${outFilename}`;
+
+        if (state.mode === 'spreadsheet') {
+          renderMappingGrid();
+        }
+
+        const payload = buildExhibitionPayload();
+        // Strictly valid JSON with 2-space indentation
+        const formattedJson = JSON.stringify(payload, null, 2);
+        el.jsonOutputPre.textContent = formattedJson;
+
+        renderTablePreview(payload);
+        renderNotices(payload);
+      }
+
+      // =========================================================================
+      // 9. Event Listeners
+      // =========================================================================
+      el.exhibitionNameInput.addEventListener('input', (e) => {
+        state.exhibitionName = e.target.value;
+        renderAll();
+      });
+
+      el.modeSpreadsheetBtn.addEventListener('click', () => {
+        setSourceMode('spreadsheet', true);
+      });
+
+      el.modeHtmlBtn.addEventListener('click', () => {
+        setSourceMode('html', true);
+      });
+
+      el.loadSampleBtn.addEventListener('click', () => {
+        if (state.mode === 'html') {
+          loadSampleHtml();
+        } else {
+          loadSampleSpreadsheet();
+        }
+      });
+
+      el.loadSampleHtmlBtn.addEventListener('click', () => {
+        loadSampleHtml();
+      });
+
+      el.uploadHtmlFileBtn.addEventListener('click', () => {
+        el.htmlFileInput.click();
+      });
+
+      el.htmlFileInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) {
+          handleHtmlFileUpload(file);
+        }
+      });
+
+      el.htmlSourceTextarea.addEventListener('input', (e) => {
+        state.htmlInput = e.target.value;
+        parseWebpageHtml(state.htmlInput);
+        renderAll();
+      });
+
+      el.resetAllBtn.addEventListener('click', () => {
+        clearAll();
+      });
+
+      el.removeFileBtn.addEventListener('click', () => {
+        state.workbook = null;
+        state.sheetNames = [];
+        state.activeSheetName = '';
+        state.headers = [];
+        state.rawRows = [];
+        state.mappings = {};
+        state.skippedEmptyRows = 0;
+        state.sourceLabel = '';
+        el.fileInput.value = '';
+        el.sheetSelectorWrapper.classList.add('hidden');
+        el.sheetSelectorWrapper.classList.remove('flex');
+        renderAll();
+      });
+
+      el.sheetSelect.addEventListener('change', (e) => {
+        if (state.workbook && e.target.value) {
+          loadSheetFromWorkbook(state.workbook, e.target.value);
+        }
+      });
+
+      el.includeOptionalToggle.addEventListener('change', (e) => {
+        state.includeOptional = e.target.checked;
+        renderAll();
+      });
+
+      // Dropzone & File Input
+      el.dropzone.addEventListener('click', () => {
+        el.fileInput.click();
+      });
+
+      el.dropzone.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          el.fileInput.click();
+        }
+      });
+
+      el.fileInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) {
+          handleFileUpload(file);
+        }
+      });
+
+      el.dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        el.dropzone.classList.add('border-gallery-accent', 'bg-gallery-subtle');
+      });
+
+      el.dropzone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        el.dropzone.classList.remove('border-gallery-accent', 'bg-gallery-subtle');
+      });
+
+      el.dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        el.dropzone.classList.remove('border-gallery-accent', 'bg-gallery-subtle');
+        const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (file) {
+          handleFileUpload(file);
+        }
+      });
+
+      // Copy JSON to Clipboard (using document.execCommand for iframe compatibility)
+      el.copyJsonBtn.addEventListener('click', () => {
+        const text = el.jsonOutputPre.textContent || '';
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+
+        let copied = false;
+        try {
+          copied = document.execCommand('copy');
+        } catch (_) {
+          copied = false;
+        }
+        document.body.removeChild(textarea);
+
+        const prevText = el.copyBtnText.textContent;
+        el.copyBtnText.textContent = copied ? 'Copied!' : 'Select & Copy';
+        setTimeout(() => {
+          el.copyBtnText.textContent = prevText || 'Copy JSON';
+        }, 1800);
+      });
+
+      // Download JSON File
+      el.downloadJsonBtn.addEventListener('click', () => {
+        const text = el.jsonOutputPre.textContent || '';
+        const filename = `Exhibition-Artworks-${slugifyFilename(state.exhibitionName || 'untitled')}`;
+        const blob = new Blob([text], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+
+      // Initial render
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
