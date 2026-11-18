@@ -4003,7 +4003,7 @@ async function boot() {
     for (const e of needUid) await store.put('exhibitions', e).catch(() => {});
     S.palette = (await store.get('kv', 'palette')) || defaultPalette();
     const ui = await store.get('kv', 'ui');
-    if (ui) Object.assign(S.ui, { snap: ui.snap ?? S.ui.snap, grid: !!ui.grid, walls: ui.walls !== false });
+    if (ui) Object.assign(S.ui, { snap: ui.snap ?? S.ui.snap, grid: !!ui.grid, walls: !!ui.walls });
     try { await syncDefaultRooms(); } catch (e) { console.warn('rooms folder', e); }
     if (!(await store.get('kv', 'seeded'))) {
       if (!S.rooms.length) await addRoom(parseRoomText(P152_SVG, 'p152.svg'));
