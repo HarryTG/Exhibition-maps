@@ -1,0 +1,84 @@
+{
+  "rooms": [
+    {
+      "name": "Life Drawing Studio",
+      "building": "P Block: Upper floor",
+      "file": "p-block-upper-floor-life-drawing-studio.svg"
+    },
+    {
+      "name": "P216",
+      "building": "P Block: Upper floor",
+      "file": "p-block-upper-floor-p216.svg"
+    },
+    {
+      "name": "Main Gallery",
+      "building": "P Block: Ground floor",
+      "file": "p-block-ground-floor-main-gallery--no-door.svg"
+    },
+    {
+      "name": "Black Room",
+      "building": "P Block: Upper floor",
+      "file": "p-block-upper-floor-black-room.svg"
+    },
+    {
+      "name": "Lecture Theatre (P152)",
+      "building": "P Block: Ground floor",
+      "file": "p-block-ground-floor-lecture-theatre-p152.svg"
+    },
+    {
+      "name": "Barn",
+      "building": "P Block: Upper floor",
+      "file": "p-block-upper-floor-barn -- claude.svg"
+    },
+    {
+      "name": "Hallway",
+      "building": "P Block: Ground floor",
+      "file": "p-block-ground-floor-hallway--simpler.svg"
+    },
+    {
+      "name": "P120",
+      "building": "P Block, Ground floor",
+      "file": "p-block-ground-floor-p120-p123.svg"
+    },
+    {
+      "name": "P112",
+      "building": "P Block, Ground floor",
+      "file": "p-block-ground-floor-p112.svg"
+    },
+    {
+      "name": "Barn, Room C",
+      "building": "P Block: Upper floor",
+      "file": "p-block-upper-floor-barn-room-c.svg"
+    },
+    {
+      "name": "Barn, Room D",
+      "building": "P Block: Upper floor",
+      "file": "p-block-upper-floor-barn-room-d.svg"
+    },
+    {
+      "name": "Barn, Room J",
+      "building": "P Block: Upper floor",
+      "file": "p-block-upper-floor-barn-room-j.svg"
+    },
+    {
+      "name": "Barn, Room L",
+      "building": "P Block: Upper floor",
+      "file": "p-block-upper-floor-barn-room-l.svg"
+    },
+    {
+      "name": "Barn, Room M",
+      "building": "P Block: Upper floor",
+      "file": "p-block-upper-floor-barn-room-m.svg"
+    },
+    {
+      "name": "Barn, Room T",
+      "building": "P Block: Upper floor",
+      "file": "p-block-upper-floor-barn-room-t.svg"
+    },
+    {
+      "name": "Barn, Room B",
+      "building": "P Block: Upper floor",
+      "file": "p-block-upper-floor-barn-room-b.svg"
+    }
+  ]
+}
