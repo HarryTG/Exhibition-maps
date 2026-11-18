@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1.6 -1.6 21.1 12.24" role="img" aria-labelledby="plan-title" data-room="Main Gallery" data-building="P Block: Ground floor" data-units="m" data-floor-box="0 0 17.9 9.04" data-wall-depth="1.4">
+  <title id="plan-title">Main Gallery</title>
+  <metadata id="plan-data">{"app":"gallery-floorplanner","version":2,"name":"Main Gallery","building":"P Block: Ground floor","units":"metres","rects":[{"x":0,"y":0,"w":17.9,"h":9.04}],"doors":[{"orient":"h","cx":7.6,"cy":0,"w":2.2,"kind":"door","open":true}],"doorGap":0.1,"cuts":[],"inner":[{"orient":"v","x":8.1,"y":-2.5,"len":3,"t":0.2,"attach":false}],"style":{"strokeWeight":5,"linejoin":"round","strokeColor":"#2d2d2d","floorFill":"#f0fde4","wallFill":"#ffffff","innerFill":"#ffffff","doorFill":"#f7f7f7","doorStroke":"#111111","windowFill":"#8ec5f0","windowStroke":"#111111","windowOpacity":0.35,"wallDepth":1.4,"openingWeight":3}}</metadata>
+  <g id="floor"><path d="M0 0 L17.9 0 L17.9 9.04 L0 9.04 Z" fill="#f0fde4" fill-rule="evenodd" stroke="none"/></g>
+  <defs>
+    <linearGradient id="door-fade-1" gradientUnits="userSpaceOnUse" x1="7.6" y1="0.03" x2="7.6" y2="-1.4"><stop offset="0" stop-color="#f0fde4" stop-opacity="1"/><stop offset="1" stop-color="#f0fde4" stop-opacity="0"/></linearGradient>
+  </defs>
+  <g id="doorways" stroke="none">
+    <path id="door-1" fill="url(#door-fade-1)" d="M6.5 0.03 L8.7 0.03 L8.7 -1.4 L6.5 -1.4 Z" data-wall="wall-N1" data-center="7.6 0" data-width="2.2" data-open="true"/>
+  </g>
+  <g id="walls" fill="#ffffff" stroke="#2d2d2d" stroke-width="0.05" stroke-linejoin="round" stroke-linecap="round">
+    <g id="wall-N1" data-facing="north" data-length="17.90">
+      <path d="M0 0 L6.5 0 L6.5 -1.4 L-1.4 -1.4 Z"/>
+      <path d="M8.7 0 L17.9 0 L19.3 -1.4 L8.7 -1.4 Z"/>
+    </g>
+    <g id="wall-W1" data-facing="west" data-length="9.04">
+      <path d="M0 0 L0 9.04 L-1.4 10.44 L-1.4 -1.4 Z"/>
+    </g>
+    <g id="wall-S1" data-facing="south" data-length="17.90">
+      <path d="M0 9.04 L17.9 9.04 L19.3 10.44 L-1.4 10.44 Z"/>
+    </g>
+    <g id="wall-E1" data-facing="east" data-length="9.04">
+      <path d="M17.9 0 L17.9 9.04 L19.3 10.44 L19.3 -1.4 Z"/>
+    </g>
+  </g>
+  <g id="inner-walls"><path d="M8.1 -2.5 L8.3 -2.5 L8.3 0.5 L8.1 0.5 Z" fill="#ffffff" fill-rule="evenodd" stroke="#2d2d2d" stroke-width="0.05" stroke-linejoin="round"/></g>
+</svg>
