@@ -1,6 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>v9.H Exhibition Editor</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<title>Exhibition Editor</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400..700&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&display=swap">
 <style>
 /* Layout: three working panes (exhibition + artwork list | room plan + photo tray | artwork inspector).
@@ -347,7 +346,7 @@ textarea.inherits::placeholder { color: var(--muted); opacity: 0.85; }
 .dots-prev .badge { width: 30px; height: 30px; font-size: 0.75rem; }
 
 /* ---------- sharing ---------- */
-#contrib-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 14px; border-radius: 12px; background: var(--new); color: #14171a; font-weight: 600; }
+#contrib-bar { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 14px; border-radius: 12px; background: var(--new); color: #14171a; font-weight: 600; }
 #contrib-bar[hidden] { display: none; }
 .bad { color: var(--warn); }
 
@@ -436,8 +435,8 @@ progress { width: 100%; height: 8px; accent-color: var(--ink); }
       <button type="button" class="btn primary b-exprt" id="btn-send-changes" hidden>Send changes back</button>
       <button type="button" class="btn primary b-exprt" id="btn-export">Export</button>
     </div>
+    <div id="contrib-bar" hidden><span id="contrib-text"></span></div>
   </header>
-  <div id="contrib-bar" hidden><span id="contrib-text"></span></div>
 
   <main id="view-ex" class="work">
     <aside class="pane side" aria-label="Exhibition and artworks">
@@ -675,6 +674,7 @@ progress { width: 100%; height: 8px; accent-color: var(--ink); }
     <p class="muted">Makes a link that opens this exhibition in the Editor for an artist. They see the works you tick in full and every other work only as a numbered dot, and nothing from your other exhibitions. Photos cannot travel inside a link: use the zip file when they should see them.</p>
     <div class="field"><span class="lbl">Artists: include their works, and let them edit</span><div id="share-artists" style="display:grid;gap:4px"></div></div>
     <div class="field"><span class="lbl">Rooms: also include every work in these rooms (view only)</span><div id="share-rooms" style="display:grid;gap:4px"></div></div>
+    <label class="small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="share-tray"> Also include the photos in the photo tray (zip file only), for when you are not sure whose they are</label>
     <div class="field"><label class="lbl" for="share-base">Address of the Editor page for the link</label><input id="share-base" type="text" autocomplete="off" spellcheck="false" placeholder="Leave blank to use this page’s address"></div>
     <p class="small" id="share-sum" role="status"></p>
     <div class="field"><label class="lbl" for="share-link">Link</label><input id="share-link" type="text" readonly></div>
@@ -1602,7 +1602,7 @@ const fmtBytes = (n) => (n < 1e6 ? `${Math.max(1, Math.round(n / 100) / 10)} kB`
 const palColors = () => (S.ex && S.ex.contrib && S.ex.contrib.palette.length ? S.ex.contrib.palette.map((hex) => ({ hex, name: '' })) : S.palette.colors);
 
 /* ---------- the organiser's side: the Share dialog ---------- */
-const SH = { artists: new Set(), rooms: new Set(), env: null, link: '', seq: 0 };
+const SH = { artists: new Set(), rooms: new Set(), tray: false, env: null, link: '', seq: 0 };
 async function makeEnvelope() {
   const arts = S.ex.artworks, nums = numberMap();
   const works = arts.map((a) => Object.assign(plainWork(a), { resolvedNumber: nums.get(a.uid), paletteIndex: autoIndex(a) }));
@@ -1612,8 +1612,11 @@ async function makeEnvelope() {
     works, scope: { rooms: [...SH.rooms], artists: [...SH.artists], editableArtists: SH.artists.size ? [...SH.artists] : ['\u0000'] },
     palette: S.palette.colors.map((c) => c.hex),
   });
-  const rooms = [...new Set(arts.map((a) => a.room).filter(Boolean))].map(roomByName).filter(Boolean).map((r) => ({ name: r.name, file: r.file, svg: r.svg }));
-  return { pkg, rooms };
+  const keep = new Set([...pkg.works.map((w) => w.room), ...SH.rooms].filter(Boolean));      // only the rooms they are in or that were ticked
+  pkg.context = pkg.context.filter((c) => keep.has(c.room));
+  const rooms = [...keep].map(roomByName).filter(Boolean).map((r) => ({ name: r.name, file: r.file, svg: r.svg }));
+  const tray = SH.tray ? [...new Set(S.ex.tray.map(photoHash).filter(Boolean))] : [];
+  return { pkg, rooms, tray };
 }
 async function updateShare() {
   const my = ++SH.seq, ok = SH.artists.size + SH.rooms.size > 0;
@@ -1629,13 +1632,14 @@ async function updateShare() {
   $('#share-link').value = SH.link;
   $('#share-sum').replaceChildren(...[
     h('span', {}, `${plural(full, 'work')} in full (${edit} editable), ${plural(env.pkg.context.length, 'other work')} as numbered dots. Link length: ${SH.link.length.toLocaleString()} characters.`),
+    env.tray.length ? h('span', {}, ` ${plural(env.tray.length, 'photo from the tray', 'photos from the tray')} will be in the zip file only.`) : null,
     SH.link.length > 8000 ? h('span', { class: 'bad' }, ' Some chat and email apps cut off long links, so send the file instead.') : null,
     location.protocol === 'file:' && !$('#share-base').value.trim() ? h('span', { class: 'bad' }, ' This page is open from your computer, so the link only works on your computer. Put the Editor on your website and open it from there, or type its address above.') : null].filter(Boolean));
   ['#share-copy', '#share-json', '#share-zip'].forEach((s) => { $(s).disabled = false; });
 }
 function openShare() {
   scheduleSave.flush();
-  SH.artists.clear(); SH.rooms.clear(); SH.env = null;
+  SH.artists.clear(); SH.rooms.clear(); SH.env = null; SH.tray = false; $('#share-tray').checked = false;
   const arts = S.ex.artworks, people = new Map();
   for (const a of arts) { const n = artistOf(a).trim(); if (n) people.set(n.toLowerCase(), n); }
   const rooms = [...new Set(arts.map((a) => a.room).filter(Boolean))];
@@ -1651,7 +1655,7 @@ async function downloadShareZip() {
   if (!SH.env) return;
   const env = SH.env, enc = new TextEncoder(), msg = $('#share-msg');
   const files = [{ name: 'share.json', data: enc.encode(JSON.stringify(env)) }];
-  const wanted = new Set(env.pkg.works.flatMap((w) => w.photos)), done = new Set();
+  const wanted = new Set([...env.pkg.works.flatMap((w) => w.photos), ...(env.tray || [])]), done = new Set();
   $('#share-zip').disabled = true;
   try {
     let i = 0;
@@ -1668,6 +1672,7 @@ async function downloadShareZip() {
 }
 function wireShare() {
   $('#btn-share').addEventListener('click', openShare);
+  $('#share-tray').addEventListener('change', (e) => { SH.tray = e.target.checked; updateShare(); });
   $('#share-base').addEventListener('change', () => { store.put('kv', { id: 'shareBase', url: $('#share-base').value.trim() }).catch(() => {}); updateShare(); });
   $('#share-copy').addEventListener('click', async () => {
     const ta = $('#share-link');
@@ -1699,7 +1704,8 @@ async function importPackage(j, files) {
   const ex = newExhibition(pkg.exhibition.name);
   ex.type = pkg.exhibition.type; ex.artist = pkg.exhibition.artist;
   ex.contrib = { packageId: pkg.id, exhibitionUid: pkg.exhibition.uid, name: pkg.exhibition.name, created: pkg.created, received: Date.now(), baseline: Pkg.baselineFromShare(pkg), editable: pkg.works.filter((w) => w.editable).map((w) => w.uid), scope: pkg.scope, palette: pkg.palette };
-  ex.context = pkg.context.map((c) => ({ uid: c.uid, room: c.room, number: c.number, x: c.x, y: c.y, z: c.z, color: c.color, pidx: c.paletteIndex }));
+  const roomSet = new Set([...pkg.works.map((w) => w.room), ...pkg.scope.rooms].filter(Boolean));
+  ex.context = pkg.context.filter((c) => roomSet.has(c.room)).map((c) => ({ uid: c.uid, room: c.room, number: c.number, x: c.x, y: c.y, z: c.z, color: c.color, pidx: c.paletteIndex }));
   let photoCount = 0, hidden = 0;
   for (const w of pkg.works) {
     const a = newArtwork(w.room, w.x, w.y);
@@ -1716,7 +1722,15 @@ async function importPackage(j, files) {
     }
     ex.artworks.push(a);
   }
-  ex.rooms = [...new Set([...pkg.works.map((w) => w.room), ...pkg.context.map((c) => c.room)].filter(Boolean))];
+  const trayList = [];
+  for (const hs of (Array.isArray(env.tray) ? env.tray : []).slice(0, 300)) {        // photos the organiser could not place
+    if (typeof hs !== 'string' || !/^[a-z0-9]{8,64}$/i.test(hs)) continue;
+    const data = files.get(`photos/${hs}.jpg`);
+    if (!data) continue;
+    try { ex.tray.push(await importPhoto(new Blob([data], { type: 'image/jpeg' }), ex.id, `${hs}.jpg`, hs)); trayList.push(hs); photoCount++; } catch { /* skipped */ }
+  }
+  ex.contrib.trayHashes = trayList;
+  ex.rooms = [...roomSet];
   S.exList.push(ex);
   await store.put('exhibitions', ex).catch(() => {});
   await openExhibition(ex);
@@ -1761,6 +1775,9 @@ function applyContribUi() {
   $('#btn-export').hidden = c; $('#mode-pal').hidden = c; $('#btn-import-data').hidden = c;
   $('#btn-share').hidden = $('#btn-merge').hidden = c || S.mode !== 'exhibition';
   $('#ex-name').disabled = c; $('#ex-artist').disabled = c;
+  $('.modes').hidden = c;                                   // nothing to switch between without the palette
+  $('#ex-name').closest('.field').querySelectorAll('.note').forEach((n) => { n.hidden = c; });
+  $('#btn-rooms').hidden = c || S.mode !== 'exhibition'; $('#btn-add-room').hidden = c;
   if (c && S.mode === 'palette') setMode('exhibition');
 }
 function contribPhotos(a) {
@@ -1783,6 +1800,7 @@ async function openSendChanges() {
   try {
     const mine = new Set(c.editable), base = Object.fromEntries(Object.entries(c.baseline).filter(([u]) => mine.has(u)));
     const ch = Pkg.buildChanges({ packageId: c.packageId, exhibitionUid: c.exhibitionUid, baseline: base, works: S.ex.artworks.filter((a) => a.editable !== false).map(plainWork), created: Date.now() });
+    { const th = new Set(c.trayHashes || []); ch.newPhotos = ch.newPhotos.filter((p) => !th.has(p)); }   // photos the organiser already has
     const files = [{ name: 'changes.json', data: new TextEncoder().encode(JSON.stringify(ch)) }];
     const byHash = new Map([...S.photos.values()].map((p) => [p.hash, p]));
     let bytes = 0;
@@ -1967,7 +1985,7 @@ async function applyMerge() {
       let any = false;
       for (const r of it.rows.filter((x) => x.on)) { any = true; for (const k of r.keys) a[k === 'dimensions' || k === 'dimsVar' ? k : k] = r.theirs[k]; }
       if (it.rows.some((r) => r.on && r.id === 'pos')) { const p = clampXY(a, a.x, a.y); a.x = fmt(p.x); a.y = fmt(p.y); }
-      for (const o of it.ops.filter((x) => x.on && x.type === 'add')) { const pid = await pidOf(o.h); if (pid) { a.photos.push(pid); if (o.crop) ex.crops[pid] = o.crop; any = true; } }
+      for (const o of it.ops.filter((x) => x.on && x.type === 'add')) { const pid = await pidOf(o.h); if (pid) { a.photos.push(pid); ex.tray = ex.tray.filter((t) => t !== pid); if (o.crop) ex.crops[pid] = o.crop; any = true; } }
       for (const o of it.ops.filter((x) => x.on && x.type === 'remove')) { const pid = a.photos.find((p) => photoHash(p) === o.h); if (pid) { a.photos.splice(a.photos.indexOf(pid), 1); ex.tray.push(pid); any = true; } }
       for (const o of it.ops.filter((x) => x.on && x.type === 'crop')) { const pid = a.photos.find((p) => photoHash(p) === o.h); if (pid) { if (o.crop) ex.crops[pid] = o.crop; else delete ex.crops[pid]; any = true; } }
       for (const o of it.ops.filter((x) => x.on && x.type === 'order')) {
@@ -1979,7 +1997,7 @@ async function applyMerge() {
     } else if (it.kind === 'add' && it.on) {
       const f = it.x.fields, a = newArtwork(f.room, f.x, f.y);
       Object.assign(a, { uid: it.x.uid, title: f.title, artist: ex.type === 'solo' ? '' : f.artist, dimensions: f.dimensions, dimsVar: f.dimsVar, material: f.material, price: f.price, text: f.text, alt: f.alt, z: f.z, color: f.color });
-      for (let i = 0; i < f.photos.length; i++) { const pid = await pidOf(f.photos[i]); if (pid) { a.photos.push(pid); if (f.crops[i]) ex.crops[pid] = f.crops[i]; } }
+      for (let i = 0; i < f.photos.length; i++) { const pid = await pidOf(f.photos[i]); if (pid) { a.photos.push(pid); ex.tray = ex.tray.filter((t) => t !== pid); if (f.crops[i]) ex.crops[pid] = f.crops[i]; } }
       const p = clampXY(a, a.x, a.y); a.x = fmt(p.x); a.y = fmt(p.y);
       ex.artworks.push(a); needRoom(a); tally.added++;
     } else if (it.kind === 'remove' && it.on) {
@@ -3553,7 +3571,6 @@ async function readZip(buf) {
 /* ---------- saving files ---------- */
 async function saveFile(name, blob) {
   let dl = null;
-  try { dl = window.claude?.use ? await window.claude.use('downloads') : null; } catch { dl = null; }
   if (dl) {
     try { await dl.save({ filename: name, data: blob }); toast(`Saved ${name}.`); return true; }
     catch (e) {
@@ -4003,7 +4020,7 @@ async function boot() {
     for (const e of needUid) await store.put('exhibitions', e).catch(() => {});
     S.palette = (await store.get('kv', 'palette')) || defaultPalette();
     const ui = await store.get('kv', 'ui');
-    if (ui) Object.assign(S.ui, { snap: ui.snap ?? S.ui.snap, grid: !!ui.grid, walls: !!ui.walls });
+    if (ui) Object.assign(S.ui, { snap: ui.snap ?? S.ui.snap, grid: !!ui.grid, walls: ui.walls !== false });
     try { await syncDefaultRooms(); } catch (e) { console.warn('rooms folder', e); }
     if (!(await store.get('kv', 'seeded'))) {
       if (!S.rooms.length) await addRoom(parseRoomText(P152_SVG, 'p152.svg'));
