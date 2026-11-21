@@ -5,7 +5,6 @@
 /* Layout: three working panes (exhibition + artwork list | room plan + photo tray | artwork inspector).
    Same type and neutrals as the DSA Gallery Map viewer, so the preview card matches what visitors see. */
 :root {
-  /*--bg: #dde2e6;*/
   --bg: floralwhite;
   --panel: #fcfcfb;
   --field: #ffffff;
@@ -19,7 +18,7 @@
   --btn-ink: #ffffff;
   --export: rebeccapurple;
   --import: royalblue;
-  --btn-create: #dcfae1;
+  --new: #dcfae1;
   --focus: #2a7de1;
   --danger: #b3261e;
   --ok: #1c7c54;
@@ -33,14 +32,14 @@
   :root:not([data-theme="light"]) {
     --bg: #0e1114; --panel: #181b1f; --field: #101316; --ink: #eceff1; --muted: #98a1a8;
     --line: #2b3036; --line-strong: #454c53; --matte: #23282d; --row-on: #232a30;
-    --btn: #eceff1; --btn-ink: #14171a;  --export: #cba5f1; --btn-create: #44744c; --focus: #6aa8ff; --danger: #ff8a80; --ok: #5fd3a2; --warn: #f0b64a;
+    --btn: #eceff1; --btn-ink: #14171a; --focus: #6aa8ff; --danger: #ff8a80; --ok: #5fd3a2; --warn: #f0b64a;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0e1114; --panel: #181b1f; --field: #101316; --ink: #eceff1; --muted: #98a1a8;
   --line: #2b3036; --line-strong: #454c53; --matte: #23282d; --row-on: #232a30;
-  --btn: #eceff1; --btn-ink: #14171a;   --export: #cba5f1; --btn-create: #44744c; --focus: #6aa8ff; --danger: #ff8a80; --ok: #5fd3a2; --warn: #f0b64a;
+  --btn: #eceff1; --btn-ink: #14171a; --focus: #6aa8ff; --danger: #ff8a80; --ok: #5fd3a2; --warn: #f0b64a;
   color-scheme: dark;
 }
 @media (prefers-reduced-motion: reduce) { :root { --t: 0ms; } }
@@ -92,7 +91,7 @@ h1, h2, h3, p { margin: 0; }
 .btn:hover { border-color: var(--ink); }
 .btn.primary { background: var(--btn); color: var(--btn-ink); border-color: var(--btn); }
 .btn.b-exprt { background: var(--export); color: var(--btn-ink); border-color: var(--btn); }
-.btn.b-create { background: var(--btn-create); color: var(--ink);}
+.btn.b-create { background: var(--new); color: var(--ink);}
 .btn.b-import { background: var(--import); color: var(--btn-ink);}
 .btn.sm { min-height: 28px; padding: 3px 10px; font-size: 0.8125rem; border-radius: 15px; }
 .btn.danger { color: var(--danger); }
@@ -156,6 +155,11 @@ input:disabled, select:disabled { opacity: 0.6; }
 .art-row.drop-before::before, .art-row.drop-after::after { content: ""; position: absolute; left: 6px; right: 6px; height: 2px; background: var(--focus); border-radius: 2px; }
 .art-row.drop-before::before { top: -3px; } .art-row.drop-after::after { bottom: -3px; }
 .art-row.photo-over { outline: 2px dashed var(--focus); outline-offset: -2px; }
+/* an artist dot's number reads A1, A2…: a little wider, and plain (no outline), like the dot itself */
+.badge.artist { width: auto; min-width: 26px; padding: 0 6px; border-radius: 13px; outline: none; font-size: 0.6875rem; }
+.sec-note { font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
+/* the artist-dot kind marker in the inspector header */
+.kind-tag { flex: none; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--row-on); border: 1px solid var(--line-strong); color: var(--muted); }
 .badge { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; font-size: 0.6875rem; font-weight: 700; font-variant-numeric: tabular-nums; outline: 3px solid #99999944; }
 .art-t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .art-s { font-size: 0.75rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -344,9 +348,10 @@ textarea.inherits::placeholder { color: var(--muted); opacity: 0.85; }
 .pal-row .invalid { border-color: var(--danger); }
 .dots-prev { display: flex; flex-wrap: wrap; gap: 8px; }
 .dots-prev .badge { width: 30px; height: 30px; font-size: 0.75rem; }
+.dots-prev .badge.artist { width: auto; min-width: 34px; height: 30px; }
 
 /* ---------- sharing ---------- */
-#contrib-bar { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 14px; border-radius: 12px; background: var(--btn-create); color: #14171a; font-weight: 600; }
+#contrib-bar { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 14px; border-radius: 12px; background: var(--new); color: #14171a; font-weight: 600; }
 #contrib-bar[hidden] { display: none; }
 .bad { color: var(--warn); }
 
@@ -467,6 +472,14 @@ progress { width: 100%; height: 8px; accent-color: var(--ink); }
           <button type="button" class="btn sm b-create" id="btn-add-art">Add artwork</button></span>
         </div>
         <ul class="art-list" id="art-list"></ul>
+      </div>
+      <div class="sec">
+        <div class="sec-head">
+          <h2>Artist dots <span class="count" id="artist-count"></span></h2>
+          <button type="button" class="btn sm b-create" id="btn-add-artist">Add artist dot</button>
+        </div>
+        <p class="sec-note">A larger dot that stands for an artist and opens their own room, such as a smaller gallery built with temporary walls. Numbered A1, A2… separately from the artworks. If the room cannot be opened, tapping it shows the dot’s own details instead, so fill it in like an artwork.</p>
+        <ul class="art-list" id="artist-dot-list"></ul>
       </div>
     </aside>
 
@@ -699,6 +712,7 @@ progress { width: 100%; height: 8px; accent-color: var(--ink); }
 <datalist id="artist-list"></datalist>
 <div id="toast" popover="manual" role="status" aria-live="polite"></div>
 <script>
+
 (() => {
 'use strict';
 /* =====================================================================
@@ -863,6 +877,8 @@ const newArtwork = (room, x = 0, y = 0) => ({
   number: null,      // whole number set by hand; null follows the list order
   dimsVar: false,    // true: the site shows "Dimensions variable" instead of the typed dimensions
 });
+/* An artist dot: a larger, plainer dot that links to a room (an artist's own temporary-wall room). It carries every field an artwork has, as the fallback panel. */
+const newArtistDot = (room, x = 0, y = 0) => Object.assign(newArtwork(room, x, y), { kind: 'artist', link: '' });
 const newExhibition = (name = '') => ({
   id: uid('e'), uid: uid('x'), name, type: 'group', artist: '', rooms: [], artworks: [], tray: [], crops: {}, updated: Date.now(),
 });
@@ -901,20 +917,34 @@ const S = {
 };
 const roomByName = (n) => S.rooms.find((r) => r.name === n);
 const artistOf = (a) => (S.ex.type === 'solo' ? S.ex.artist : a.artist) || '';
+const ARTIST_PREFIX = 'A';          // an artist dot's number is written A1, A2… (the viewer reads the same prefix)
+const isArtist = (a) => !!a && a.kind === 'artist';
+const kindOf = (a) => (isArtist(a) ? 'artist' : 'art');
 /* Automatic colour: with two or more artists in the show every artist gets the next palette colour (all their works match);
    with one artist each artwork gets the next colour, so the dots stay distinguishable. */
 function autoIndex(a) {
-  const arts = S.ex.artworks, key = (x) => artistOf(x).trim().toLowerCase();
+  // artist dots never take a place in the colour order: they borrow their artist's colour (see colorOf), so adding one changes no artwork's colour
+  const arts = S.ex.artworks.filter((x) => !isArtist(x)), key = (x) => artistOf(x).trim().toLowerCase();
   const names = [...new Set(arts.map(key).filter(Boolean))];
+  if (isArtist(a) && key(a) && !names.includes(key(a))) {      // an artist who has no artwork in the show yet: next colour after everyone else's
+    const only = [...new Set(S.ex.artworks.filter(isArtist).map(key).filter((k) => k && !names.includes(k)))];
+    return (names.length >= 2 ? names.length + arts.filter((x) => !key(x)).length : arts.length) + only.indexOf(key(a));
+  }
   if (names.length >= 2) {
     const k = key(a);
-    if (k) return names.indexOf(k);
-    return names.length + arts.filter((x) => !key(x)).indexOf(a);   // works with no artist yet follow the named artists
+    if (k) return Math.max(0, names.indexOf(k));
+    return names.length + Math.max(0, arts.filter((x) => !key(x)).indexOf(a));   // works with no artist yet follow the named artists
   }
   return Math.max(0, arts.indexOf(a));
 }
+/* An artist dot is the colour of that artist's artworks (the first one, when each artwork has its own), unless it has one set by hand. */
 const colorOf = (a) => {
   if (a.color) return a.color;
+  if (isArtist(a)) {
+    const k = artistOf(a).trim().toLowerCase();
+    const mate = k && S.ex.artworks.find((x) => !isArtist(x) && artistOf(x).trim().toLowerCase() === k);
+    if (mate) return colorOf(mate);
+  }
   const cs = palColors();
   return cs.length ? cs[(a.pidx != null && S.ex.contrib ? a.pidx : autoIndex(a)) % cs.length].hex : '#9ad4cf';
 };
@@ -924,15 +954,18 @@ const artByUid = (u) => S.ex && S.ex.artworks.find((a) => a.uid === u);
 const DIMS_VARIABLE = 'Dimensions variable';
 const isManual = (a) => Number.isInteger(a.number) && a.number > 0;
 function numberMap(arts = S.ex.artworks) {
-  const m = new Map(), taken = new Set(arts.filter(isManual).map((a) => a.number));
-  if (S.ex && arts === S.ex.artworks) for (const c of S.ex.context || []) if (c.number) taken.add(c.number);   // other artists' works keep their numbers
-  for (const a of arts) if (!isManual(a) && a.dispNum) taken.add(a.dispNum);
-  let n = 0;
+  // artworks and artist dots are two separate series, so adding an artist dot never renumbers an artwork
+  const m = new Map(), taken = { art: new Set(), artist: new Set() };
+  for (const a of arts) if (isManual(a)) taken[kindOf(a)].add(a.number);
+  if (S.ex && arts === S.ex.artworks) for (const c of S.ex.context || []) if (c.number) taken[kindOf(c)].add(c.number);   // other artists' works keep their numbers
+  for (const a of arts) if (!isManual(a) && a.dispNum) taken[kindOf(a)].add(a.dispNum);
+  const n = { art: 0, artist: 0 };
   for (const a of arts) {
+    const k = kindOf(a);
     if (isManual(a)) { m.set(a.uid, a.number); continue; }
     if (a.dispNum) { m.set(a.uid, a.dispNum); continue; }
-    do n++; while (taken.has(n));       // automatic works take the lowest numbers no hand-numbered work uses
-    m.set(a.uid, n);
+    do n[k]++; while (taken[k].has(n[k]));       // automatic works take the lowest numbers no hand-numbered work uses
+    m.set(a.uid, n[k]);
   }
   return m;
 }
@@ -954,16 +987,18 @@ function fitNumbers(arts, wants) {
   sortByNumber(arts);
 }
 const numberOf = (a) => numberMap().get(a.uid) ?? 1;
+const labelOf = (a, n) => (isArtist(a) ? ARTIST_PREFIX : '') + (n ?? numberOf(a));     // what is written on the dot: 7, or A2
+const nameOf = (a) => stripMd(a.title) || (isArtist(a) ? stripMd(artistOf(a)) : '') || (isArtist(a) ? 'Untitled artist dot' : 'Untitled artwork');
 const outDims = (a) => (a.dimsVar ? DIMS_VARIABLE : (a.dimensions || '').trim());
 
 /* A work with no text of its own borrows the text of its artist's only work that has any. */
 const artistKey = (a) => artistOf(a).trim().toLowerCase();
 const hasText = (a) => /\S/.test(a.text || '');
 function textSource(a) {
-  if (hasText(a)) return null;
+  if (hasText(a) || isArtist(a)) return null;
   const k = artistKey(a);
   if (!k) return null;
-  const withText = S.ex.artworks.filter((x) => artistKey(x) === k && hasText(x));
+  const withText = S.ex.artworks.filter((x) => !isArtist(x) && artistKey(x) === k && hasText(x));
   return withText.length === 1 ? withText[0] : null;
 }
 const textOf = (a) => { const src = textSource(a); return src ? src.text : (a.text || ''); };
@@ -975,7 +1010,7 @@ const textOf = (a) => { const src = textSource(a); return src ? src.text : (a.te
    A work is identified by its permanent uid, a photo by its content id (hash of the original file). */
 const Pkg = (() => {
   const FORMAT = 'gallery-exhibition-package', VERSION = 1;
-  const FIELDS = ['room', 'title', 'artist', 'dimensions', 'dimsVar', 'material', 'price', 'text', 'alt', 'x', 'y', 'z', 'number', 'color', 'photos', 'crops'];
+  const FIELDS = ['room', 'title', 'artist', 'dimensions', 'dimsVar', 'material', 'price', 'text', 'alt', 'x', 'y', 'z', 'number', 'color', 'photos', 'crops', 'kind', 'link'];
   const TEXT = ['room', 'title', 'artist', 'dimensions', 'material', 'price', 'text', 'alt'];
   const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
   const lc = (s) => String(s == null ? '' : s).trim().toLowerCase();
@@ -1002,6 +1037,7 @@ const Pkg = (() => {
     f.color = hex6(w.color);
     f.photos = photos;
     f.crops = photos.map((_, i) => normCrop(w.crops && w.crops[i]));
+    if (w.kind === 'artist') { f.kind = 'artist'; f.link = str(w.link).trim(); }     // artist dots only: regular works keep exactly the fields (and checksums) they always had
     return f;
   }
   function stable(v) {
@@ -1039,7 +1075,9 @@ const Pkg = (() => {
     const clipped = {};
     for (const k of TEXT) if (own(f, k)) clipped[k] = str(f[k]).slice(0, 20000);
     const full = workFields(Object.assign({}, f, clipped));
-    for (const k of FIELDS) if (own(f, k) && k !== 'photos' && k !== 'crops') out[k] = full[k];
+    for (const k of FIELDS) if (own(f, k) && k !== 'photos' && k !== 'crops' && k !== 'kind' && k !== 'link') out[k] = full[k];
+    if (own(f, 'link')) out.link = str(f.link).trim().slice(0, 200);
+    if (f.kind === 'artist') out.kind = 'artist';
     if (own(f, 'photos')) {
       const keep = full.photos.map((p, i) => [p, full.crops[i]]).filter(([p]) => PHOTO_ID.test(p)).slice(0, 40);
       out.photos = keep.map(([p]) => p);
@@ -1068,7 +1106,7 @@ const Pkg = (() => {
           editable: !editors.length || editors.includes(lc(w.artist)),
         }));
       } else {
-        context.push({ uid: String(w.uid), room: str(w.room), number: w.resolvedNumber, x: rnd(w.x, 3), y: rnd(w.y, 3), z: Number.isFinite(Number(w.z)) ? Number(w.z) : 2, color: hex6(w.color), paletteIndex: w.paletteIndex });
+        context.push({ uid: String(w.uid), ...(w.kind === 'artist' ? { kind: 'artist' } : {}), room: str(w.room), number: w.resolvedNumber, x: rnd(w.x, 3), y: rnd(w.y, 3), z: Number.isFinite(Number(w.z)) ? Number(w.z) : 2, color: hex6(w.color), paletteIndex: w.paletteIndex });
       }
     }
     return {
@@ -1122,7 +1160,7 @@ const Pkg = (() => {
         if (f.hash !== workHash(f)) return bad('The package has been altered or damaged (a work does not match its checksum).');
         works.push(f);
       }
-      const context = (Array.isArray(j.context) ? j.context : []).filter((c) => c && uidOk(c.uid)).map((c) => ({ uid: c.uid, room: str(c.room), number: Number(c.number) || null, x: rnd(c.x, 3), y: rnd(c.y, 3), z: Number.isFinite(Number(c.z)) ? Number(c.z) : 2, color: hex6(c.color), paletteIndex: Number.isInteger(c.paletteIndex) ? c.paletteIndex : 0 }));
+      const context = (Array.isArray(j.context) ? j.context : []).filter((c) => c && uidOk(c.uid)).map((c) => ({ uid: c.uid, ...(c.kind === 'artist' ? { kind: 'artist' } : {}), room: str(c.room), number: Number(c.number) || null, x: rnd(c.x, 3), y: rnd(c.y, 3), z: Number.isFinite(Number(c.z)) ? Number(c.z) : 2, color: hex6(c.color), paletteIndex: Number.isInteger(c.paletteIndex) ? c.paletteIndex : 0 }));
       const sc = j.scope || {};
       return { ok: true, kind: 'share', value: { id: String(j.id || ''), created: Number(j.created) || 0, exhibition: { uid: j.exhibition.uid, name: str(j.exhibition.name), type: j.exhibition.type === 'solo' ? 'solo' : 'group', artist: str(j.exhibition.artist) }, scope: { rooms: (sc.rooms || []).map(str), artists: (sc.artists || []).map(str), editableArtists: (sc.editableArtists || []).map(str) }, palette: (Array.isArray(j.palette) ? j.palette : []).map(hex6).filter(Boolean), works, context } };
     }
@@ -1155,6 +1193,7 @@ function plainWork(a) {
     material: a.material, price: a.price || '', text: a.text, alt: a.alt || '', x: a.x, y: a.y, z: a.z,
     number: isManual(a) ? a.number : null, color: a.color || null,
     photos: isContrib() ? contribPhotos(a).map((x) => x.h) : a.photos.map(photoHash), crops: isContrib() ? contribPhotos(a).map((x) => x.crop) : a.photos.map((pid) => cropOf(pid) || null),
+    ...(isArtist(a) ? { kind: 'artist', link: a.link || '' } : {}),
   };
 }
 const workHashOf = (a) => Pkg.workHash(plainWork(a));
@@ -1355,6 +1394,7 @@ function buildView(room) {
   if (vb.length !== 4 || vb.some((n) => !isFinite(n))) throw new Error('This SVG has no viewBox.');
   const surfaces = [];
   root.querySelectorAll('[id="walls"] path, [id="doorways"] path').forEach((p) => {
+    if (p.closest('[id^="other-"]')) return;     // neighbouring rooms drawn for the map's surroundings are scenery, not this room's walls
     const n = (p.getAttribute('d') || '').match(NUM)?.map(Number) || [];
     if (n.length !== 8) return;
     const door = !!p.closest('[id="doorways"]');
@@ -1457,7 +1497,10 @@ async function renameRoom(room, name) {
   for (const ex of S.exList) {   // keep every saved exhibition pointing at the room
     let touched = false;
     ex.rooms = ex.rooms.map((n) => (n === old ? (touched = true, name) : n));
-    ex.artworks.forEach((a) => { if (a.room === old) { a.room = name; touched = true; } });
+    ex.artworks.forEach((a) => {      // artwork rooms, and artist dots that open the room
+      if (a.room === old) { a.room = name; touched = true; }
+      if (a.link === old) { a.link = name; touched = true; }
+    });
     if (touched) { ex.updated = Date.now(); store.put('exhibitions', ex).catch(() => {}); }
   }
   if (S.roomName === old) S.roomName = name;
@@ -1705,10 +1748,11 @@ async function importPackage(j, files) {
   ex.type = pkg.exhibition.type; ex.artist = pkg.exhibition.artist;
   ex.contrib = { packageId: pkg.id, exhibitionUid: pkg.exhibition.uid, name: pkg.exhibition.name, created: pkg.created, received: Date.now(), baseline: Pkg.baselineFromShare(pkg), editable: pkg.works.filter((w) => w.editable).map((w) => w.uid), scope: pkg.scope, palette: pkg.palette };
   const roomSet = new Set([...pkg.works.map((w) => w.room), ...pkg.scope.rooms].filter(Boolean));
-  ex.context = pkg.context.filter((c) => roomSet.has(c.room)).map((c) => ({ uid: c.uid, room: c.room, number: c.number, x: c.x, y: c.y, z: c.z, color: c.color, pidx: c.paletteIndex }));
+  ex.context = pkg.context.filter((c) => roomSet.has(c.room)).map((c) => ({ uid: c.uid, ...(c.kind === 'artist' ? { kind: 'artist' } : {}), room: c.room, number: c.number, x: c.x, y: c.y, z: c.z, color: c.color, pidx: c.paletteIndex }));
   let photoCount = 0, hidden = 0;
   for (const w of pkg.works) {
     const a = newArtwork(w.room, w.x, w.y);
+    if (w.kind === 'artist') Object.assign(a, { kind: 'artist', link: w.link || '' });
     Object.assign(a, {
       uid: w.uid, title: w.title, artist: ex.type === 'solo' ? '' : w.artist, dimensions: w.dimensions, dimsVar: w.dimsVar, material: w.material, price: w.price, text: w.text, alt: w.alt,
       z: w.z, color: w.color, number: w.number, editable: w.editable, dispNum: w.resolvedNumber, pidx: w.paletteIndex, basePhotos: w.photos.slice(), hiddenPhotos: [],
@@ -1753,11 +1797,11 @@ async function importAnyJson(text, files) {
 
 /* What the artist sees: the organiser's other works are only numbered dots, view-only works cannot be changed. */
 function ctxDotNode(c, u) {
-  const [vx, vy] = projectPt(stage.view, c.x, c.y, c.z), cs = palColors(), col = c.color || (cs.length ? cs[c.pidx % cs.length].hex : '#9ad4cf'), R = DOT_PX * u;
+  const [vx, vy] = projectPt(stage.view, c.x, c.y, c.z), cs = palColors(), col = c.color || (cs.length ? cs[c.pidx % cs.length].hex : '#9ad4cf'), art = isArtist(c), R = DOT_PX * (art ? ARTIST_DOT_SCALE : 1) * u;
   return sv('g', { class: 'dot ctx', transform: `translate(${vx} ${vy})`, 'pointer-events': 'none', opacity: 0.55 },
-    sv('title', {}, 'Another artist’s work'),
-    sv('circle', { r: R, fill: col, stroke: '#fff', 'stroke-width': 2 * u }),
-    sv('text', { 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': 12 * u, 'font-weight': 700, fill: inkOn(col), style: 'font-family:var(--font-ui)' }, String(c.number || '')));
+    sv('title', {}, art ? 'Another artist’s dot' : 'Another artist’s work'),
+    sv('circle', art ? { r: R, fill: col } : { r: R, fill: col, stroke: '#fff', 'stroke-width': 2 * u }),
+    sv('text', { 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': (art ? 13 : 12) * u, 'font-weight': 700, fill: inkOn(col), style: 'font-family:var(--font-ui)' }, (art ? ARTIST_PREFIX : '') + String(c.number || '')));
 }
 function lockInspector() {
   const a = isContrib() && artByUid(S.sel);
@@ -1791,7 +1835,7 @@ function contribPhotos(a) {
 }
 
 const SC = { blob: null, name: '' };
-const FIELD_WORDS = { room: 'room', title: 'title', artist: 'artist', dimensions: 'dimensions', dimsVar: 'dimensions', material: 'material', price: 'price', text: 'text', alt: 'photo description', x: 'position', y: 'position', z: 'height', number: 'number', color: 'colour', photos: 'photos', crops: 'photo crops' };
+const FIELD_WORDS = { room: 'room', title: 'title', artist: 'artist', dimensions: 'dimensions', dimsVar: 'dimensions', material: 'material', price: 'price', text: 'text', alt: 'photo description', x: 'position', y: 'position', z: 'height', number: 'number', color: 'colour', photos: 'photos', crops: 'photo crops', link: 'linked room' };
 async function openSendChanges() {
   scheduleSave.flush();
   const c = S.ex.contrib, dlg = $('#dlg-send'), sum = $('#send-sum'), list = $('#send-list'), go = $('#send-go');
@@ -1813,7 +1857,7 @@ async function openSendChanges() {
       bytes += data.length;
       files.push({ name: `photos/${ch.newPhotos[i]}.jpg`, data });
     }
-    const title = (u) => stripMd((artByUid(u) || {}).title || (c.baseline[u] && c.baseline[u].fields.title) || '') || 'Untitled artwork';
+    const title = (u) => (artByUid(u) ? nameOf(artByUid(u)) : '') || stripMd((c.baseline[u] && c.baseline[u].fields.title) || '') || 'Untitled artwork';
     const lines = [
       ...ch.changes.map((x) => `${title(x.uid)}: ${[...new Set(Object.keys(x.fields).filter((k) => k !== 'crops' || !('photos' in x.fields)).map((k) => FIELD_WORDS[k] || k))].join(', ')}`),
       ...ch.added.map((x) => `New work: ${title(x.uid)}`),
@@ -1837,7 +1881,7 @@ async function openSendChanges() {
 const MG_GROUPS = [
   ['room', 'Room', ['room']], ['title', 'Title', ['title']], ['artist', 'Artist', ['artist']], ['dims', 'Dimensions', ['dimensions', 'dimsVar']],
   ['material', 'Material', ['material']], ['price', 'Price', ['price']], ['text', 'Text', ['text']], ['alt', 'Photo description', ['alt']],
-  ['pos', 'Position', ['x', 'y']], ['z', 'Height', ['z']], ['number', 'Number', ['number']], ['color', 'Colour', ['color']],
+  ['pos', 'Position', ['x', 'y']], ['z', 'Height', ['z']], ['number', 'Number', ['number']], ['color', 'Colour', ['color']], ['link', 'Linked room', ['link']],
 ];
 const mgSub = (o, keys) => Object.fromEntries(keys.map((k) => [k, o[k]]));
 const mgSame = (p, q) => Pkg.stable(p) === Pkg.stable(q);
@@ -1887,7 +1931,7 @@ function buildMerge(ch, files) {
       if (!mgSame(common, bp.filter((p) => common.includes(p))) && !mgSame(common, mp.filter((p) => common.includes(p)))) ops.push({ type: 'order', common, on: false });
     }
     if (rows.length || ops.length) items.push({ kind: 'change', a, c, rows, ops, group: artistOf(a).trim() || 'No artist' });
-    else items.push({ kind: 'same', title: stripMd(a.title) || 'Untitled artwork', group: artistOf(a).trim() || 'No artist' });
+    else items.push({ kind: 'same', title: nameOf(a), group: artistOf(a).trim() || 'No artist' });
   }
   for (const x of ch.added) {
     if (artByUid(x.uid)) { items.push({ kind: 'same', title: stripMd(x.fields.title) || 'Untitled artwork', group: x.fields.artist.trim() || 'No artist', note: 'already added' }); continue; }
@@ -1921,12 +1965,12 @@ function renderMerge() {
       const card = h('div', { class: 'mg-card' });
       if (it.kind === 'add') {
         const f = it.x.fields;
-        card.append(check(it, h('b', {}, `New work: ${stripMd(f.title) || 'Untitled artwork'}`), h('span', { class: 'muted small' }, ` · ${f.room || 'no room'} · ${plural(f.photos.length, 'photo')}${it.missing ? `, ${it.missing} not in the file` : ''}`)));
+        card.append(check(it, h('b', {}, `New work: ${stripMd(f.title) || (f.kind === 'artist' ? stripMd(f.artist || '') || 'Untitled artist dot' : '') || 'Untitled artwork'}`), h('span', { class: 'muted small' }, ` · ${f.room || 'no room'} · ${plural(f.photos.length, 'photo')}${it.missing ? `, ${it.missing} not in the file` : ''}`)));
         if (f.text) card.append(h('p', { class: 'mv small' }, f.text.slice(0, 240) + (f.text.length > 240 ? '…' : '')));
       } else if (it.kind === 'remove') {
-        card.append(check(it, h('b', {}, `Delete: ${stripMd(it.a.title) || 'Untitled artwork'}`), h('span', { class: 'muted small' }, ' · the artist deleted this work. Its photos go back to the tray.')));
+        card.append(check(it, h('b', {}, `Delete: ${nameOf(it.a)}`), h('span', { class: 'muted small' }, ' · the artist deleted this work. Its photos go back to the tray.')));
       } else {
-        card.append(h('b', { class: 'mg-title' }, stripMd(it.a.title) || 'Untitled artwork'));
+        card.append(h('b', { class: 'mg-title' }, nameOf(it.a)));
         for (const r of it.rows) {
           card.append(check(r, r.label, r.conflict ? h('span', { class: 'bad small' }, ' · you have also changed this: ticking replaces yours') : null),
             h('div', { class: 'mg-cols' },
@@ -1996,6 +2040,7 @@ async function applyMerge() {
       if (any) tally.changed++;
     } else if (it.kind === 'add' && it.on) {
       const f = it.x.fields, a = newArtwork(f.room, f.x, f.y);
+      if (f.kind === 'artist') Object.assign(a, { kind: 'artist', link: f.link || '' });
       Object.assign(a, { uid: it.x.uid, title: f.title, artist: ex.type === 'solo' ? '' : f.artist, dimensions: f.dimensions, dimsVar: f.dimsVar, material: f.material, price: f.price, text: f.text, alt: f.alt, z: f.z, color: f.color });
       for (let i = 0; i < f.photos.length; i++) { const pid = await pidOf(f.photos[i]); if (pid) { a.photos.push(pid); ex.tray = ex.tray.filter((t) => t !== pid); if (f.crops[i]) ex.crops[pid] = f.crops[i]; } }
       const p = clampXY(a, a.x, a.y); a.x = fmt(p.x); a.y = fmt(p.y);
@@ -2034,7 +2079,7 @@ function wireMerge() {
 }
 
 /* ---------- round trip with the Gallery Floorplanner ---------- */
-const FP_DEFAULT = 'floorplanner/', FP_MAX = 2000000;
+const FP_DEFAULT = 'Gallery Floorplanner.html', FP_MAX = 2000000;
 const fpLink = { win: null, roomId: null, ready: false };
 let fpUrlSetting = FP_DEFAULT;
 function fpTarget() {
@@ -2426,7 +2471,7 @@ function renderTray() {
   renderStrip($('#tray-strip'), 'tray');
   const n = S.ex.tray.length;
   $('#tray-count').textContent = n ? `(${n} unassigned)` : '';
-  $('#btn-assign').disabled = !n || !S.ex.artworks.some((a) => !a.photos.length);
+  $('#btn-assign').disabled = !n || !S.ex.artworks.some((a) => !isArtist(a) && !a.photos.length);
 }
 function renderPhotoStrip() {
   const el = $('#insp-strip');
@@ -2435,7 +2480,7 @@ function renderPhotoStrip() {
   if (c) c.textContent = (artByUid(S.sel)?.photos.length || '') && `(${artByUid(S.sel).photos.length})`;
 }
 function assignInOrder() {
-  const targets = S.ex.artworks.filter((a) => !a.photos.length);
+  const targets = S.ex.artworks.filter((a) => !isArtist(a) && !a.photos.length);
   let n = 0;
   while (S.ex.tray.length && n < targets.length) { targets[n].photos.push(S.ex.tray.shift()); n++; }
   afterPhotoChange();
@@ -2694,7 +2739,7 @@ function renderTabs() {
     const count = S.ex.artworks.filter((a) => a.room === name).length;
     tabs.append(h('div', { class: 'tab', role: 'tab', 'aria-selected': String(name === S.roomName) },
       h('button', { type: 'button', title: (() => { const r = roomByName(name), b = r && buildingOf(r); return b ? `Building: ${b}` : null; })(), onclick: () => { S.roomName = name; renderStage(); } }, name + (roomByName(name) ? '' : ' (missing)') + (count ? ' ' : ''), count ? h('span', { class: 'tab-n' }, `· ${count}`) : null),
-      count === 0 ? h('button', { type: 'button', class: 'x', 'aria-label': `Remove ${name} from this exhibition`, title: 'Remove from this exhibition', onclick: () => removeRoomFromExhibition(name) }, '×') : null));
+      count === 0 && !S.ex.artworks.some((a) => isArtist(a) && a.link === name) ? h('button', { type: 'button', class: 'x', 'aria-label': `Remove ${name} from this exhibition`, title: 'Remove from this exhibition', onclick: () => removeRoomFromExhibition(name) }, '×') : null));
   });
 }
 function addRoomToExhibition(name) {
@@ -2722,6 +2767,8 @@ function drawRoom() {
   const svg = document.importNode(v.root, true);
   svg.removeAttribute('width'); svg.removeAttribute('height'); svg.removeAttribute('aria-labelledby');
   svg.querySelectorAll('title, metadata').forEach((n) => n.remove());
+  // neighbouring rooms (other-floor-*, other-wall-*) are scenery here: shown faintly, never in the way of a dot
+  svg.querySelectorAll('[id^="other-"]').forEach((n) => { n.style.opacity = '0.55'; n.style.pointerEvents = 'none'; });
   svg.setAttribute('class', 'plan-svg');
   svg.setAttribute('role', 'application');
   svg.setAttribute('aria-label', `Floor plan of ${room.name}. Dots are artworks.`);
@@ -2772,17 +2819,21 @@ function redrawLayer() {
   for (const c of (S.ex.context || []).filter((x) => x.room === S.roomName)) L.append(ctxDotNode(c, u));
   for (const a of arts) L.append(dotNode(a, u));
 }
+const ARTIST_DOT_SCALE = 1.45;      // artist dots are drawn larger than artwork dots, as in the viewer
 function dotNode(a, u) {
   const [vx, vy] = projectPt(stage.view, a.x, a.y, a.z);
-  const col = colorOf(a), n = numberOf(a), R = DOT_PX * u;
+  const col = colorOf(a), n = numberOf(a), lab = labelOf(a, n), art = isArtist(a), R = DOT_PX * (art ? ARTIST_DOT_SCALE : 1) * u;
   const rel = (vx - stage.vb.x) / stage.vb.w;
-  const name = stripMd(a.title) || 'Untitled artwork';
-  return sv('g', { class: 'dot' + (a.uid === S.sel ? ' sel' : ''), transform: `translate(${vx} ${vy})`, tabindex: 0, role: 'button', 'aria-label': `${n}. ${name}`, 'data-uid': a.uid },
-    sv('title', {}, `${n}. ${name}`),
-    sv('circle', { r: R + 1.6 * u, fill: 'rgba(17,17,17,0.7)' }),
-    sv('circle', { r: R, fill: col, stroke: '#fff', 'stroke-width': 2 * u }),
+  const name = nameOf(a);
+  const body = art
+    // artist dot: just a larger disc in the artist's colour: no border, outline or shadow
+    ? [sv('circle', { r: R, fill: col })]
+    : [sv('circle', { r: R + 1.6 * u, fill: 'rgba(17,17,17,0.7)' }), sv('circle', { r: R, fill: col, stroke: '#fff', 'stroke-width': 2 * u })];
+  return sv('g', { class: 'dot' + (art ? ' artist' : '') + (a.uid === S.sel ? ' sel' : ''), transform: `translate(${vx} ${vy})`, tabindex: 0, role: 'button', 'aria-label': `${lab}. ${name}${art ? ' (artist dot)' : ''}`, 'data-uid': a.uid },
+    sv('title', {}, `${lab}. ${name}${art ? (a.link ? ` → ${a.link}` : ' (no room linked)') : ''}`),
+    ...body,
     sv('circle', { class: 'ring', r: R + 5 * u, 'stroke-width': 2 * u }),
-    sv('text', { 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': 12 * u, 'font-weight': 700, fill: inkOn(col), 'pointer-events': 'none', style: 'font-family:var(--font-ui)' }, String(n)),
+    sv('text', { 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': (art ? 13 : 12) * u, 'font-weight': 700, fill: inkOn(col), 'pointer-events': 'none', style: 'font-family:var(--font-ui)' }, lab),
     a.uid === S.sel ? sv('text', { class: 'coord-lbl', y: R + 17 * u, x: rel > 0.8 ? R : rel < 0.2 ? -R : 0, 'text-anchor': rel > 0.8 ? 'end' : rel < 0.2 ? 'start' : 'middle', 'font-size': 11 * u, 'stroke-width': 3.5 * u }, coordText(a)) : null);
 }
 const coordText = (a) => `x ${fmt(a.x)} · y ${fmt(a.y)}`;
@@ -2951,14 +3002,15 @@ function selectArtwork(uidv, opts = {}) {
   if (opts.focusTitle) $('#f-title')?.focus();
   $('#art-list').querySelector('.art-row.on')?.scrollIntoView({ block: 'nearest' });
 }
-function addArtwork() {
-  if (!S.ex.rooms.length) { openRooms(true); toast('Add a room first, then place artworks in it.'); return; }
+function addArtwork(kind) {
+  const art = kind === 'artist';       // (called from a button, kind is then an event object)
+  if (!S.ex.rooms.length) { openRooms(true); toast(`Add a room first, then place ${art ? 'artist dots' : 'artworks'} in it.`); return; }
   const room = S.roomName && S.ex.rooms.includes(S.roomName) ? S.roomName : S.ex.rooms[0];
   const r = roomByName(room);
   let f = { x: 0, y: 0, w: 6, h: 6 };
   try { if (r) f = roomView(r).floor; } catch { /* default */ }
   const n = S.ex.artworks.filter((a) => a.room === room).length;
-  const a = newArtwork(room, f.x + f.w / 2 + ((n % 5) - 2) * 0.6, f.y + f.h / 2 + (Math.floor(n / 5) % 5) * 0.6);
+  const a = (art ? newArtistDot : newArtwork)(room, f.x + f.w / 2 + ((n % 5) - 2) * 0.6, f.y + f.h / 2 + (Math.floor(n / 5) % 5) * 0.6);
   if (isContrib() && S.ex.type === 'group' && S.ex.contrib.scope.editableArtists.length === 1) a.artist = S.ex.contrib.scope.editableArtists[0];   // a new work from an artist's copy is theirs
   S.ex.artworks.push(a);
   S.sel = null;
@@ -2989,7 +3041,8 @@ function wireStageControls() {
     if (rooms.length) { const added = await addRoomsFromFiles(rooms); if (added[0]) addRoomToExhibition(added[0].name); }
     else if (photos.length) await addPhotos(photos, S.sel || 'tray');
   });
-  $('#btn-add-art').addEventListener('click', addArtwork);
+  $('#btn-add-art').addEventListener('click', () => addArtwork('art'));
+  $('#btn-add-artist').addEventListener('click', () => addArtwork('artist'));
 }
 const saveUi = () => store.put('kv', { id: 'ui', ...S.ui, lastEx: S.ex?.id }).catch(() => {});
 /* =====================================================================
@@ -3041,61 +3094,69 @@ function wireExHeader() {
 
 /* ---------- artwork list ---------- */
 let dragRow = null;
-function renderList() {
-  const ul = $('#art-list');
-  ul.replaceChildren();
-  const arts = S.ex.artworks, nums = numberMap();
-  $('#art-count').textContent = arts.length ? `(${arts.length})` : '';
-  if (!arts.length) ul.append(h('li', { class: 'empty-note' }, 'No artworks yet. Add one, then drag its dot into place on the plan.'));
-  arts.forEach((a, i) => {
-    const col = colorOf(a);
-    const sub = [S.ex.type === 'group' ? a.artist : '', S.ex.rooms.length > 1 ? a.room : ''].filter(Boolean).join(' · ');
-    const li = h('li', { class: 'art-row' + (a.uid === S.sel ? ' on' : ''), draggable: true, dataset: { uid: a.uid }, tabindex: 0 },
-      h('span', { class: 'badge', title: a.number ? 'Number set by hand' : '', style: `background:${col};color:${inkOn(col)}` }, String(nums.get(a.uid))),
-      h('div', { style: 'min-width:0' }, h('div', { class: 'art-t' }, stripMd(a.title) || 'Untitled artwork'), sub ? h('div', { class: 'art-s' }, sub) : null),
-      h('span', { class: 'art-n' }, a.photos.length ? plural(a.photos.length, 'photo') : ''));
-    li.addEventListener('click', () => selectArtwork(a.uid));
-    li.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectArtwork(a.uid); } });
-    li.addEventListener('dragstart', (e) => {
-      dragRow = a.uid; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', a.uid);
-      // the dragged label carries the number and colour only when the work has its own custom colour
-      const ghost = h('div', { class: 'ghost' }, a.color ? h('span', { class: 'badge', style: `background:${a.color};color:${inkOn(a.color)}` }, String(nums.get(a.uid))) : null, h('span', {}, stripMd(a.title) || 'Untitled artwork'));
-      document.body.append(ghost);
-      e.dataTransfer.setDragImage(ghost, 14, 16);
-      setTimeout(() => ghost.remove(), 0);
-      setTimeout(() => li.classList.add('dragging'), 0);
-    });
-    li.addEventListener('dragend', () => { dragRow = null; li.classList.remove('dragging'); $$('.drop-before, .drop-after, .photo-over', ul).forEach((n) => n.classList.remove('drop-before', 'drop-after', 'photo-over')); });
-    li.addEventListener('dragover', (e) => {
-      const photo = dragPhoto || hasFiles(e);
-      if (!photo && !dragRow) return;
-      e.preventDefault();
-      $$('.drop-before, .drop-after, .photo-over', ul).forEach((n) => n.classList.remove('drop-before', 'drop-after', 'photo-over'));
-      if (photo) li.classList.add('photo-over');
-      else if (dragRow !== a.uid) { const r = li.getBoundingClientRect(); li.classList.add(e.clientY < r.top + r.height / 2 ? 'drop-before' : 'drop-after'); }
-    });
-    li.addEventListener('dragleave', (e) => { if (!li.contains(e.relatedTarget)) li.classList.remove('drop-before', 'drop-after', 'photo-over'); });
-    li.addEventListener('drop', async (e) => {
-      const photo = dragPhoto || hasFiles(e);
-      if (!photo && !dragRow) return;
-      e.preventDefault();
-      const before = li.classList.contains('drop-before');
-      li.classList.remove('drop-before', 'drop-after', 'photo-over');
-      if (dragPhoto) { const d = dragPhoto; dragPhoto = null; movePhoto(d.id, d.from, a.uid, null); toast(`Photo added to ${stripMd(a.title) || 'the artwork'}.`); }
-      else if (hasFiles(e)) await addPhotos([...e.dataTransfer.files], a.uid);
-      else if (dragRow && dragRow !== a.uid) {
-        const from = arts.findIndex((x) => x.uid === dragRow);
-        const [moved] = arts.splice(from, 1);
-        let to = arts.indexOf(a);
-        if (!before) to++;
-        arts.splice(to, 0, moved);
-        sortByNumber();
-        dragRow = null;
-        renderList(); redrawLayer(); renderInspector(); updatePalettePreview(); scheduleSave();
-      }
-    });
-    ul.append(li);
+function listRow(a, nums) {
+  const arts = S.ex.artworks, art = isArtist(a);
+  const col = colorOf(a), lab = labelOf(a, nums.get(a.uid));
+  const sub = art
+    ? [S.ex.type === 'group' ? a.artist : '', a.link ? `→ ${a.link}` : 'No room linked'].filter(Boolean).join(' · ')
+    : [S.ex.type === 'group' ? a.artist : '', S.ex.rooms.length > 1 ? a.room : ''].filter(Boolean).join(' · ');
+  const li = h('li', { class: 'art-row' + (a.uid === S.sel ? ' on' : ''), draggable: true, dataset: { uid: a.uid }, tabindex: 0 },
+    h('span', { class: 'badge' + (art ? ' artist' : ''), title: a.number ? 'Number set by hand' : '', style: `background:${col};color:${inkOn(col)}` }, lab),
+    h('div', { style: 'min-width:0' }, h('div', { class: 'art-t' }, nameOf(a)), sub ? h('div', { class: 'art-s' }, sub) : null),
+    h('span', { class: 'art-n' }, a.photos.length ? plural(a.photos.length, 'photo') : ''));
+  li.addEventListener('click', () => selectArtwork(a.uid));
+  li.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectArtwork(a.uid); } });
+  li.addEventListener('dragstart', (e) => {
+    dragRow = a.uid; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', a.uid);
+    // the dragged label carries the number and colour only when the work has its own custom colour
+    const ghost = h('div', { class: 'ghost' }, a.color ? h('span', { class: 'badge' + (art ? ' artist' : ''), style: `background:${a.color};color:${inkOn(a.color)}` }, lab) : null, h('span', {}, nameOf(a)));
+    document.body.append(ghost);
+    e.dataTransfer.setDragImage(ghost, 14, 16);
+    setTimeout(() => ghost.remove(), 0);
+    setTimeout(() => li.classList.add('dragging'), 0);
   });
+  li.addEventListener('dragend', () => { dragRow = null; li.classList.remove('dragging'); $$('.art-row.drop-before, .art-row.drop-after, .art-row.photo-over').forEach((n) => n.classList.remove('drop-before', 'drop-after', 'photo-over')); });
+  li.addEventListener('dragover', (e) => {
+    const photo = dragPhoto || hasFiles(e);
+    if (!photo && !dragRow) return;
+    e.preventDefault();
+    $$('.art-row.drop-before, .art-row.drop-after, .art-row.photo-over').forEach((n) => n.classList.remove('drop-before', 'drop-after', 'photo-over'));
+    if (photo) li.classList.add('photo-over');
+    else if (dragRow !== a.uid) { const r = li.getBoundingClientRect(); li.classList.add(e.clientY < r.top + r.height / 2 ? 'drop-before' : 'drop-after'); }
+  });
+  li.addEventListener('dragleave', (e) => { if (!li.contains(e.relatedTarget)) li.classList.remove('drop-before', 'drop-after', 'photo-over'); });
+  li.addEventListener('drop', async (e) => {
+    const photo = dragPhoto || hasFiles(e);
+    if (!photo && !dragRow) return;
+    e.preventDefault();
+    const before = li.classList.contains('drop-before');
+    li.classList.remove('drop-before', 'drop-after', 'photo-over');
+    if (dragPhoto) { const d = dragPhoto; dragPhoto = null; movePhoto(d.id, d.from, a.uid, null); toast(`Photo added to ${stripMd(a.title) || 'the artwork'}.`); }
+    else if (hasFiles(e)) await addPhotos([...e.dataTransfer.files], a.uid);
+    else if (dragRow && dragRow !== a.uid) {
+      const from = arts.findIndex((x) => x.uid === dragRow);
+      const [moved] = arts.splice(from, 1);
+      let to = arts.indexOf(a);
+      if (!before) to++;
+      arts.splice(to, 0, moved);
+      sortByNumber();
+      dragRow = null;
+      renderList(); redrawLayer(); renderInspector(); updatePalettePreview(); scheduleSave();
+    }
+  });
+  return li;
+}
+function renderList() {
+  const ul = $('#art-list'), ul2 = $('#artist-dot-list');
+  ul.replaceChildren(); ul2.replaceChildren();
+  const arts = S.ex.artworks, nums = numberMap();
+  const regular = arts.filter((a) => !isArtist(a)), dots = arts.filter(isArtist);
+  $('#art-count').textContent = regular.length ? `(${regular.length})` : '';
+  $('#artist-count').textContent = dots.length ? `(${dots.length})` : '';
+  if (!regular.length) ul.append(h('li', { class: 'empty-note' }, 'No artworks yet. Add one, then drag its dot into place on the plan.'));
+  if (!dots.length) ul2.append(h('li', { class: 'empty-note' }, 'None yet.'));
+  regular.forEach((a) => ul.append(listRow(a, nums)));
+  dots.forEach((a) => ul2.append(listRow(a, nums)));
   const dl = $('#artist-list');
   dl.replaceChildren(...[...new Set(arts.map((a) => a.artist.trim()).filter(Boolean))].map((n) => h('option', { value: n })));
 }
@@ -3132,7 +3193,7 @@ function bindText(el, a, key) {
   el.addEventListener('input', () => {
     a[key] = el.value;
     renderList(); updatePreview(); scheduleSave();
-    if (key === 'title') { redrawLayer(); const t = $('#insp-title'); if (t) t.textContent = stripMd(a.title) || 'Untitled artwork'; }
+    if (key === 'title' || key === 'artist') { redrawLayer(); const t = $('#insp-title'); if (t) t.textContent = nameOf(a); }
     if (key === 'artist') afterColorChange();
     if (key === 'text' || key === 'artist') refreshInherit(a);
   });
@@ -3155,14 +3216,14 @@ function refreshInherit(a) {
 
 /* the artwork's number: blank follows the list order, a number typed here is kept */
 function numberField(a) {
-  const auto = numberOf(a);
+  const auto = numberOf(a), art = isArtist(a);
   const el = h('input', { type: 'number', id: 'f-num', min: '1', step: '1', inputmode: 'numeric', placeholder: String(auto), value: a.number ?? '', class: a.number ? 'manual' : '' });
   const note = h('span', { class: 'note', id: 'num-note' });
   const check = () => {
-    const nums = numberMap(), mine = nums.get(a.uid);
-    const clash = S.ex.artworks.filter((x) => x !== a && nums.get(x.uid) === mine);
+    const nums = numberMap(), mine = nums.get(a.uid), k = kindOf(a);
+    const clash = S.ex.artworks.filter((x) => x !== a && kindOf(x) === k && nums.get(x.uid) === mine);
     note.className = 'note' + (clash.length ? ' bad' : '');
-    note.textContent = clash.length ? `Also used by ${clash.map((x) => stripMd(x.title) || 'an untitled work').join(', ')}.` : (a.number ? 'Set by hand. Listed first.' : 'Automatic.');
+    note.textContent = clash.length ? `Also used by ${clash.map((x) => nameOf(x)).join(', ')}.` : (a.number ? 'Set by hand. Listed first.' : 'Automatic.');
     el.placeholder = String(mine);
     el.classList.toggle('manual', !!a.number);
   };
@@ -3173,7 +3234,7 @@ function numberField(a) {
   });
   el.addEventListener('change', () => { el.value = a.number ?? ''; sortByNumber(); check(); renumbered(true); });   // hand-numbered works snap to the top once the number is entered
   check();
-  const f = field('f-num', 'No.', el, null, 'Shown on the map and exported with the work. Leave it blank to number automatically: those works take the lowest numbers not used by a hand-numbered work, in list order. A work with a number typed in moves to the top of the list, in number order.');
+  const f = field('f-num', art ? 'No. (A…)' : 'No.', el, null, art ? 'Artist dots are numbered A1, A2… in a series of their own, so they never change an artwork’s number. Leave it blank to number automatically in list order; type a number to set it by hand. A dot with a number typed in moves to the top of its list.' : 'Shown on the map and exported with the work. Leave it blank to number automatically: those works take the lowest numbers not used by a hand-numbered work, in list order. A work with a number typed in moves to the top of the list, in number order.');
   f.append(note);
   return f;
 }
@@ -3183,7 +3244,33 @@ function renumbered(scroll) {
   renderList(); redrawLayer(); updatePalettePreview(); scheduleSave();
   if (scroll) $('#art-list .art-row.on')?.scrollIntoView({ block: 'nearest' });
   const b = $('#insp-badge');
-  if (b && a) b.textContent = String(numberOf(a));
+  if (b && a) b.textContent = labelOf(a);
+}
+/* An artist dot's link: the room it opens. Rooms outside this exhibition are offered too and are added to it when picked. */
+function linkField(a) {
+  const inEx = S.ex.rooms, others = S.rooms.filter((r) => !inEx.includes(r.name));
+  const sel = h('select', { id: 'f-link' },
+    h('option', { value: '' }, 'No link (shows these details when tapped)'),
+    inEx.map((n) => h('option', { value: n, selected: n === a.link }, n + (n === a.room ? ' (this room)' : ''))),
+    a.link && !inEx.includes(a.link) && !others.some((r) => r.name === a.link) ? h('option', { value: a.link, selected: true }, `${a.link} (not in your library)`) : null,
+    others.length ? h('optgroup', { label: 'Add to this exhibition and link' }, others.map((r) => h('option', { value: r.name, selected: r.name === a.link }, r.name))) : null);
+  const note = h('span', { class: 'note', id: 'link-note' });
+  const check = () => {
+    note.className = 'note' + (a.link && (a.link === a.room || !roomByName(a.link)) ? ' bad' : '');
+    note.textContent = !a.link ? 'With no link this dot only shows its own details.'
+      : a.link === a.room ? 'This is the room the dot is in: tapping it would go nowhere. Pick the smaller gallery it should open.'
+      : !roomByName(a.link) ? 'That room is not in your library, so the link will fail and the details below are shown instead.'
+      : 'Tapping the dot opens this room. If it cannot be opened, the details below are shown instead.';
+  };
+  sel.addEventListener('change', () => {
+    a.link = sel.value;
+    if (a.link && !S.ex.rooms.includes(a.link)) { S.ex.rooms.push(a.link); renderTabs(); }
+    check(); renderList(); redrawLayer(); updatePreview(); scheduleSave();
+  });
+  check();
+  const f = field('f-link', 'Opens room', sel, null, 'The artist dot is a link to the artist’s own room, such as a smaller gallery built with temporary walls. It still has every field an artwork has, so if the link fails the visitor sees those details instead.');
+  f.append(note);
+  return f;
 }
 function renderInspector() { renderInspectorCore(); lockInspector(); }
 function renderInspectorCore() {
@@ -3192,19 +3279,23 @@ function renderInspectorCore() {
   box.replaceChildren();
   if (!a) {
     box.append(h('div', { class: 'insp-empty' },
-      h('p', {}, S.ex.artworks.length ? 'Select a dot on the plan, or an artwork in the list, to edit it.' : 'Add your first artwork, then drag its dot into place on the plan.'),
-      h('button', { type: 'button', class: 'btn primary b-create', onclick: addArtwork }, 'Add artwork')));
+      h('p', {}, S.ex.artworks.length ? 'Select a dot on the plan, or an item in the list, to edit it.' : 'Add your first artwork, then drag its dot into place on the plan.'),
+      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' },
+        h('button', { type: 'button', class: 'btn primary b-create', onclick: () => addArtwork('art') }, 'Add artwork'),
+        h('button', { type: 'button', class: 'btn b-create', onclick: () => addArtwork('artist') }, 'Add artist dot'))));
     return;
   }
+  const art = isArtist(a);
   const col = colorOf(a);
   const del = armedButton(h('button', { type: 'button', class: 'btn sm danger' }, 'Delete'), 'Click to confirm', () => deleteArtwork(a));
   box.append(h('div', { class: 'insp-head' },
-    h('span', { class: 'badge', id: 'insp-badge', style: `background:${col};color:${inkOn(col)}` }, String(numberOf(a))),
-    h('h2', { id: 'insp-title' }, stripMd(a.title) || 'Untitled artwork'),
+    h('span', { class: 'badge' + (art ? ' artist' : ''), id: 'insp-badge', style: `background:${col};color:${inkOn(col)}` }, labelOf(a)),
+    h('h2', { id: 'insp-title' }, nameOf(a)),
+    art ? h('span', { class: 'kind-tag' }, 'Artist dot') : null,
     h('button', { type: 'button', class: 'btn sm', onclick: () => duplicateArtwork(a) }, 'Duplicate'), del));
 
   // --- details
-  const title = bindText(h('input', { type: 'text', id: 'f-title', autocomplete: 'off', placeholder: 'Title', dataset: { md: '' } }), a, 'title');
+  const title = bindText(h('input', { type: 'text', id: 'f-title', autocomplete: 'off', placeholder: art ? 'Title (optional; the artist’s name is used if blank)' : 'Title', dataset: { md: '' } }), a, 'title');
   const solo = S.ex.type === 'solo';
   const artist = solo
     ? h('input', { type: 'text', id: 'f-artist', disabled: true, value: S.ex.artist, placeholder: 'Set the artist at the top' })
@@ -3212,7 +3303,7 @@ function renderInspectorCore() {
   const dim = bindText(h('input', { type: 'text', id: 'f-dim', autocomplete: 'off', placeholder: 'e.g. 120 × 160 cm', dataset: { dims: '' } }), a, 'dimensions');
   const mat = bindText(h('input', { type: 'text', id: 'f-mat', autocomplete: 'off', placeholder: 'e.g. Oil on linen', dataset: { md: '' } }), a, 'material');
   const price = bindText(h('input', { type: 'text', id: 'f-price', autocomplete: 'off', placeholder: 'e.g. $450', dataset: { md: '' } }), a, 'price');
-  const text = bindText(h('textarea', { id: 'f-text', rows: 8, placeholder: 'A paragraph or two about the work.', dataset: { md: '' } }), a, 'text');
+  const text = bindText(h('textarea', { id: 'f-text', rows: 8, placeholder: art ? 'A paragraph about the artist or the room the dot opens.' : 'A paragraph or two about the work.', dataset: { md: '' } }), a, 'text');
   const dimBar = charBar(dim, dimItems);
   const dimNote = h('span', { class: 'note over', id: 'dim-note', hidden: !a.dimsVar }, `The site shows “${DIMS_VARIABLE}” and ignores what is written above.`);
   const varBtn = h('button', {
@@ -3230,8 +3321,9 @@ function renderInspectorCore() {
   dim.classList.toggle('overridden', !!a.dimsVar);
   dimBar.append(varBtn);
   box.append(h('div', { class: 'sec' },
+    art ? linkField(a) : null,
     h('div', { class: 'row-title' }, h('div', {}, field('f-title', 'Title', title)), numberField(a)),
-    field('f-artist', 'Artist', solo ? null : artist, solo ? 'This is a solo show; the artist is set with the exhibition details.' : null),
+    field('f-artist', 'Artist', solo ? null : artist, solo ? 'This is a solo show; the artist is set with the exhibition details.' : (art ? 'Also sets the dot’s colour: it matches this artist’s artworks.' : null)),
     h('div', { class: 'row2' },
       h('div', {}, field('f-dim', 'Dimensions', dim), dimBar, dimNote),
       h('div', {}, field('f-mat', 'Material', mat))),
@@ -3327,18 +3419,18 @@ function renderColorSec() {
   const sec = $('#color-sec'), a = artByUid(S.sel);
   if (!sec || !a) return;
   const cs = palColors(), idx = a.pidx != null && S.ex.contrib ? a.pidx : autoIndex(a), auto = cs.length ? cs[idx % cs.length] : null;
-  const multi = new Set(S.ex.artworks.map((x) => artistOf(x).trim().toLowerCase()).filter(Boolean)).size >= 2;
+  const multi = new Set(S.ex.artworks.filter((x) => !isArtist(x)).map((x) => artistOf(x).trim().toLowerCase()).filter(Boolean)).size >= 2;
   const set = (hex) => { a.color = hex; afterColorChange(); };
   const sw = h('div', { class: 'swatches', role: 'group', 'aria-label': 'Dot colour' },
     h('button', { type: 'button', class: 'sw auto', 'aria-pressed': String(!a.color), title: `Automatic${auto ? ': palette colour ' + ((idx % cs.length) + 1) + (auto.name ? ' (' + auto.name + ')' : '') : ''}`, 'aria-label': 'Automatic colour from the palette', onclick: () => set(null) }),
     cs.map((c) => h('button', { type: 'button', class: 'sw', style: `background:${c.hex}`, 'aria-pressed': String(a.color === c.hex), title: c.name || c.hex, 'aria-label': c.name || c.hex, onclick: () => set(c.hex) })));
   const custom = h('input', { type: 'color', id: 'f-color', value: a.color || colorOf(a), 'aria-label': 'Custom colour' });
   custom.addEventListener('input', () => { a.color = custom.value; afterColorChange(true); });
-  const autoText = `Automatic: palette colour ${auto ? (idx % cs.length) + 1 : '–'}${auto?.name ? ', ' + auto.name : ''}${multi ? ', shared by every work by this artist' : ''}.`;
+  const autoText = `Automatic: palette colour ${auto ? (idx % cs.length) + 1 : '–'}${auto?.name ? ', ' + auto.name : ''}${multi && !isArtist(a) ? ', shared by every work by this artist' : ''}.`;
   sec.replaceChildren(
     h('summary', {}, 'Dot colour', h('span', { class: 'mini', style: `background:${colorOf(a)}` })),
     h('div', { class: 'fold-body' }, sw,
-      h('div', { class: 'status' }, h('span', {}, a.color ? 'Set for this artwork only.' : autoText),
+      h('div', { class: 'status' }, h('span', {}, a.color ? `Set for this ${isArtist(a) ? 'dot' : 'artwork'} only.` : autoText),
         h('span', { style: 'display:inline-flex;align-items:center;gap:6px' }, 'Custom', custom))));
 }
 function afterColorChange(keepSec) {
@@ -3381,13 +3473,14 @@ function updatePreview() {
   }
   const pager = many ? h('div', { class: 'vp-pager' }, ids.map((_, k) => h('button', { type: 'button', 'aria-label': `Photo ${k + 1} of ${ids.length}`, 'aria-current': String(k === idx), onclick: () => { previewPhoto.set(a.uid, k); updatePreview(); } }))) : null;
   const paras = mdParas(textOf(a));
+  const titleText = (a.title || '').trim() ? a.title : (isArtist(a) ? artistOf(a) : '');      // the viewer shows the artist's name when an artist dot has no title
   const titleSize = clamp(17.6 + 0.012 * dev.w, 23.2, 30.4);
   const vp = h('div', { class: 'vp', 'data-shape': g.shape, style: `width:${g.pw}px;height:${g.ph}px;--accent:${col}` },
     h('figure', { class: 'vp-photo' + (many ? ' multi' : '') }, img || h('span', { class: 'none' }, 'No photo yet'), pager),
     h('div', { class: 'vp-info' },
       h('header', {},
         h('p', { class: 'vp-artist' }, h('i', { class: 'vp-swatch' }), h('span', {}, stripMd(artistOf(a)))),
-        h('h2', { class: 'vp-title', style: `font-size:${titleSize}px`, innerHTML: mdInline(a.title) })),
+        h('h2', { class: 'vp-title', style: `font-size:${titleSize}px`, innerHTML: mdInline(titleText) })),
       h('dl', { class: 'vp-facts' },
         h('div', {}, h('dt', {}, 'Dimensions'), h('dd', { innerHTML: mdInline(outDims(a)) })),
         h('div', {}, h('dt', {}, 'Material'), h('dd', { innerHTML: mdInline((a.material || '').trim()) })),
@@ -3395,7 +3488,7 @@ function updatePreview() {
       h('div', { class: 'vp-story' }, h('div', { class: 'vp-text' }, paras.map((p) => h('p', { innerHTML: mdInline(p) }))))),
     h('span', { class: 'vp-close', 'aria-hidden': 'true', innerHTML: '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6 L18 18 M18 6 L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' }));
   box.replaceChildren(h('div', { class: 'vp-wrap' }, vp),
-    h('p', { class: 'note' }, `${dev.label}: photo box ${Math.round(g.photoW)} × ${Math.round(g.photoH)} px, ${g.aspect.toFixed(2)} : 1.${many ? ' Click the photo to see the next one.' : ''}`));
+    h('p', { class: 'note' }, `${dev.label}: photo box ${Math.round(g.photoW)} × ${Math.round(g.photoH)} px, ${g.aspect.toFixed(2)} : 1.${many ? ' Click the photo to see the next one.' : ''}${isArtist(a) ? (a.link ? ` Visitors normally go straight to ${a.link}; this panel appears only if that room cannot be opened.` : ' This dot has no room linked, so tapping it shows this panel.') : ''}`));
   fitPreview();
 }
 
@@ -3446,13 +3539,13 @@ function palChanged(namesOnly) {
 function updatePalettePreview() {
   const box = $('#pal-prev');
   if (!box || !S.ex) return;
-  const n = S.ex.artworks.length;
-  $('#pal-prev-note').textContent = n ? `The ${plural(n, 'artwork')} in “${S.ex.name || 'Untitled exhibition'}”, numbered as in the list. Artworks with their own colour display it here, but custom colours are exported with the artwork data.` : 'No artworks in this exhibition yet. Colours repeat in this order as you add them.';
+  const n = S.ex.artworks.length, nd = S.ex.artworks.filter(isArtist).length;
+  $('#pal-prev-note').textContent = n ? `The ${plural(n - nd, 'artwork')}${nd ? ` and ${plural(nd, 'artist dot')}` : ''} in “${S.ex.name || 'Untitled exhibition'}”, numbered as in the list (artist dots are the larger ones, A1, A2…). Dots with their own colour display it here, but custom colours are exported with the artwork data.` : 'No artworks in this exhibition yet. Colours repeat in this order as you add them.';
   const count = n || S.palette.colors.length, nums = n ? numberMap() : null;
   box.replaceChildren(...Array.from({ length: Math.min(count, 60) }, (_, i) => {
     const a = S.ex.artworks[i];
     const col = a ? colorOf(a) : S.palette.colors[i % S.palette.colors.length].hex;
-    return h('span', { class: 'badge', style: `background:${col};color:${inkOn(col)}`, title: a ? (stripMd(a.title) || 'Untitled artwork') + (a.color ? ' (own colour)' : '') : '' }, String(a ? nums.get(a.uid) : i + 1));
+    return h('span', { class: 'badge' + (a && isArtist(a) ? ' artist' : ''), style: `background:${col};color:${inkOn(col)}`, title: a ? nameOf(a) + (a.color ? ' (own colour)' : '') : '' }, a ? labelOf(a, nums.get(a.uid)) : String(i + 1));
   }));
 }
 function nextPaletteColor() {
@@ -3591,8 +3684,10 @@ const exportPalette = () => saveFile(paletteFileName(), new Blob([paletteJson()]
 function artworkIds() {
   const used = new Set(), map = new Map();
   for (const a of S.ex.artworks) {
-    const base = (S.ex.type === 'solo' ? slug(stripMd(a.title)) : slug(`${artistOf(a)} ${stripMd(a.title)}`)) || 'untitled';
-    const root = base.slice(0, 60).replace(/-+$/, '') || 'untitled';
+    const who = S.ex.type === 'solo' ? '' : artistOf(a), what = stripMd(a.title);
+    // artist dots get an "artist-" id so they can never collide with an artwork's id
+    const base = (isArtist(a) ? slug(`artist ${S.ex.type === 'solo' ? artistOf(a) : who} ${what}`) : slug(`${who} ${what}`)) || (isArtist(a) ? 'artist' : 'untitled');
+    const root = base.slice(0, 60).replace(/-+$/, '') || (isArtist(a) ? 'artist' : 'untitled');
     let id = root, n = 2;
     while (used.has(id)) id = `${root}-${n++}`;
     used.add(id); map.set(a.uid, id);
@@ -3607,7 +3702,8 @@ function photoList() {
 }
 function exhibitionJson() {
   const ex = S.ex, exSlug = exFileName(), ids = artworkIds(), nums = numberMap();
-  const roomNames = [...new Set([...ex.rooms, ...ex.artworks.map((a) => a.room)].filter(Boolean))];
+  // a room an artist dot opens must be listed too, or the viewer has no plan to open
+  const roomNames = [...new Set([...ex.rooms, ...ex.artworks.map((a) => a.room), ...ex.artworks.filter(isArtist).map((a) => a.link)].filter(Boolean))];
   const out = {
     app: 'gallery-exhibition-editor', version: 1,
     exhibition: { uid: ex.uid, name: ex.name, slug: exSlug, type: ex.type, ...(ex.type === 'solo' ? { artist: ex.artist } : {}) },
@@ -3617,7 +3713,8 @@ function exhibitionJson() {
     }),
     artworks: ex.artworks.map((a) => {
       const id = ids.get(a.uid);
-      const o = { id, uid: a.uid, number: nums.get(a.uid), room: a.room, title: a.title, artist: artistOf(a), dimensions: outDims(a), material: a.material, x: fmt(a.x), y: fmt(a.y), z: a.z };
+      // "number" is the dot's number within its own series: artworks 1, 2, 3…; artist dots A1, A2… (the A is added by the viewer)
+      const o = { id, uid: a.uid, ...(isArtist(a) ? { kind: 'artist' } : {}), number: nums.get(a.uid), room: a.room, title: a.title, artist: artistOf(a), ...(isArtist(a) ? { link: a.link || '' } : {}), dimensions: outDims(a), material: a.material, x: fmt(a.x), y: fmt(a.y), z: a.z };
       if (a.price && a.price.trim()) o.price = a.price.trim();
       if (a.color) o.color = a.color; else o.paletteIndex = autoIndex(a);   // viewer: palette[paletteIndex % palette.length]
       o.text = mdParas(textOf(a));
@@ -3636,21 +3733,30 @@ function exhibitionJson() {
 function exportWarnings() {
   const ex = S.ex, out = [];
   if (!ex.name.trim()) out.push({ text: 'The exhibition has no title, so the files will be named untitled-exhibition.' });
-  if (!ex.artworks.length) out.push({ text: 'There are no artworks yet.' });
+  if (!ex.artworks.some((a) => !isArtist(a))) out.push({ text: 'There are no artworks yet.' });
   if (ex.type === 'solo' && !ex.artist.trim()) out.push({ text: 'This is a solo show but no artist is set at the top.' });
   const nums = numberMap(), seen = new Map();
-  ex.artworks.forEach((a, i) => {
-    const n = nums.get(a.uid), label = `${n}. ${stripMd(a.title) || 'Untitled artwork'}`;
-    if (seen.has(n)) out.push({ text: `Two artworks are numbered ${n}: ${seen.get(n)} and ${stripMd(a.title) || 'Untitled artwork'}.`, uid: a.uid });
-    else seen.set(n, stripMd(a.title) || 'Untitled artwork');
-    if (!stripMd(a.title)) out.push({ text: `Artwork ${n} has no title.`, uid: a.uid });
+  ex.artworks.forEach((a) => {
+    const art = isArtist(a), n = nums.get(a.uid), lab = labelOf(a, n), nm = nameOf(a), label = `${lab}. ${nm}`;
+    const sk = `${kindOf(a)}:${n}`;
+    if (seen.has(sk)) out.push({ text: `Two ${art ? 'artist dots' : 'artworks'} are numbered ${lab}: ${seen.get(sk)} and ${nm}.`, uid: a.uid });
+    else seen.set(sk, nm);
+    if (art) {
+      if (!a.link) out.push({ text: `${label} (artist dot) has no room linked, so tapping it only shows its details.`, uid: a.uid });
+      else if (a.link === a.room) out.push({ text: `${label} (artist dot) links to the room it sits in. Pick the smaller gallery it should open.`, uid: a.uid });
+      else if (!roomByName(a.link)) out.push({ text: `${label} (artist dot) links to “${a.link}”, which is not in your room library. Add that room, or the link will fail.`, uid: a.uid });
+      if (!stripMd(a.title) && !stripMd(artistOf(a))) out.push({ text: `${label} (artist dot) has no title or artist, so its fallback details would be empty.`, uid: a.uid });
+      if (!a.text.trim() && !a.photos.length) out.push({ text: `${label} (artist dot) has no text or photo for its fallback details.`, uid: a.uid });
+    } else {
+      if (!stripMd(a.title)) out.push({ text: `Artwork ${n} has no title.`, uid: a.uid });
+      if (!a.photos.length) out.push({ text: `${label} has no photo.`, uid: a.uid });
+    }
     const up = a.photos.findIndex((pid) => photoAspect(pid) && photoAspect(pid) < 1);
     if (up >= 0) {
       const asp = photoAspect(a.photos[up]), shown = Math.round(visibleRect(asp, 1, WIDEST).h * 100);
       out.push({ text: `${label}: photo ${up + 1} is upright (${asp.toFixed(2)} : 1), so on a computer only the middle ${shown}% of its height shows. Crop it?`, uid: a.uid });
     }
     if (ex.type === 'group' && !a.artist.trim()) out.push({ text: `${label} has no artist.`, uid: a.uid });
-    if (!a.photos.length) out.push({ text: `${label} has no photo.`, uid: a.uid });
     const r = roomByName(a.room);
     if (!a.room) out.push({ text: `${label} is not in a room.`, uid: a.uid });
     else if (!r) out.push({ text: `${label}: room “${a.room}” is not in your library, so its position cannot be checked.`, uid: a.uid });
@@ -3664,7 +3770,7 @@ function exportWarnings() {
   const arts = ex.artworks;
   for (let i = 0; i < arts.length; i++) for (let j = i + 1; j < arts.length; j++) {
     const a = arts[i], b = arts[j];
-    if (a.room === b.room && Math.hypot(a.x - b.x, a.y - b.y) < 0.05 && a.z === b.z) out.push({ text: `Artworks ${nums.get(a.uid)} and ${nums.get(b.uid)} are at the same position.`, uid: b.uid });
+    if (a.room === b.room && Math.hypot(a.x - b.x, a.y - b.y) < 0.05 && a.z === b.z) out.push({ text: `${labelOf(a, nums.get(a.uid))} and ${labelOf(b, nums.get(b.uid))} are at the same position.`, uid: b.uid });
   }
   if (ex.tray.length) out.push({ text: `${plural(ex.tray.length, 'photo')} not assigned to an artwork will not be exported.` });
   return out;
@@ -3732,7 +3838,8 @@ async function importJsonText(text, files) {
   let missing = 0;
   const usedUids = new Set();
   for (const o of j.artworks) {
-    const a = newArtwork(o.room || '', Number(o.x) || 0, Number(o.y) || 0);
+    const a = (o.kind === 'artist' ? newArtistDot : newArtwork)(o.room || '', Number(o.x) || 0, Number(o.y) || 0);
+    if (o.kind === 'artist') a.link = String(o.link || '');
     if (typeof o.uid === 'string' && o.uid.trim() && !usedUids.has(o.uid.trim())) a.uid = o.uid.trim().slice(0, 100);   // older files have none: a new one is made
     usedUids.add(a.uid);
     Object.assign(a, {
@@ -3753,12 +3860,13 @@ async function importJsonText(text, files) {
   const wants = new Map();
   j.artworks.forEach((o, i) => { const want = parseInt(o.number, 10); if (Number.isInteger(want) && want > 0) wants.set(ex.artworks[i].uid, want); });
   fitNumbers(ex.artworks, wants);
-  ex.rooms = [...new Set([...(j.rooms || []).map((r) => r.name), ...ex.artworks.map((a) => a.room)].filter(Boolean))];
+  ex.rooms = [...new Set([...(j.rooms || []).map((r) => r.name), ...ex.artworks.map((a) => a.room), ...ex.artworks.filter(isArtist).map((a) => a.link)].filter(Boolean))];
   S.exList.push(ex);
   await store.put('exhibitions', ex).catch(() => {});
   await openExhibition(ex);
   const lost = ex.rooms.filter((n) => !roomByName(n));
-  toast(`Imported ${plural(ex.artworks.length, 'artwork')}.` + (missing ? ` ${plural(missing, 'photo')} not included in the file.` : '') + (lost.length ? ` Add the room${lost.length > 1 ? 's' : ''} ${lost.join(', ')} to see the plan.` : ''));
+  const nd = ex.artworks.filter(isArtist).length;
+  toast(`Imported ${plural(ex.artworks.length - nd, 'artwork')}${nd ? ` and ${plural(nd, 'artist dot')}` : ''}.` + (missing ? ` ${plural(missing, 'photo')} not included in the file.` : '') + (lost.length ? ` Add the room${lost.length > 1 ? 's' : ''} ${lost.join(', ')} to see the plan.` : ''));
 }
 async function importExhibitionFiles(files) {
   for (const f of files) {
@@ -3809,7 +3917,7 @@ function readDataText(text) {
 const sameWork = (a, it) => stripMd(a.title).trim().toLowerCase() === stripMd(it.title || '').trim().toLowerCase()
   && (S.ex.type === 'solo' || it.artist === undefined || a.artist.trim().toLowerCase() === it.artist.trim().toLowerCase());
 function planDataImport(items, mode) {
-  const unused = new Set(S.ex.artworks), plan = items.map((it) => {
+  const unused = new Set(S.ex.artworks.filter((a) => !isArtist(a))), plan = items.map((it) => {
     const hit = mode === 'update' ? [...unused].find((a) => sameWork(a, it)) : null;
     if (hit) unused.delete(hit);
     return { it, a: hit || null };
@@ -3918,7 +4026,13 @@ function normalizeEx(ex) {
   ex.rooms = Array.isArray(ex.rooms) ? ex.rooms : [];
   ex.tray = Array.isArray(ex.tray) ? ex.tray : [];
   ex.crops = ex.crops && typeof ex.crops === 'object' ? ex.crops : {};
-  ex.artworks = (ex.artworks || []).map((a) => Object.assign(newArtwork(a.room), a, { photos: Array.isArray(a.photos) ? a.photos : [] }));
+  // saved exhibitions from before artist dots have no kind or link, and stay exactly as they were: only an artist dot carries them
+  ex.artworks = (ex.artworks || []).map((a) => {
+    const b = Object.assign(newArtwork(a.room), a, { photos: Array.isArray(a.photos) ? a.photos : [] });
+    if (b.kind === 'artist') b.link = typeof b.link === 'string' ? b.link : '';
+    else { delete b.kind; delete b.link; }
+    return b;
+  });
   sortByNumber(ex.artworks);
   return ex;
 }
