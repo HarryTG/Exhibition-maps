@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1.2 -1.2 20.3 11.94" role="img" aria-labelledby="plan-title" data-room="Main Gallery" data-building="P Block, Ground floor" data-units="m" data-floor-box="0 0 17.9 9.54" data-wall-depth="1">
+  <title id="plan-title">Main Gallery</title>
+  <metadata id="plan-data">{"app":"gallery-floorplanner","version":2,"name":"Main Gallery","building":"P Block, Ground floor","units":"metres","rects":[{"x":0,"y":5,"w":17.9,"h":9.04},{"x":16.5,"y":14.04,"w":1.4,"h":0.5},{"x":14.2,"y":14.04,"w":2.2,"h":0.5}],"doors":[{"orient":"h","cx":7.6,"cy":5,"w":2.2,"kind":"door","open":true,"h":0.85},{"orient":"h","cx":13.075,"cy":14.04,"w":2.25,"kind":"door","open":false,"h":1},{"orient":"h","cx":17.2,"cy":14.54,"w":1.4,"kind":"door","open":false,"h":0.9},{"orient":"h","cx":15.3,"cy":14.54,"w":2.2,"kind":"window","h":0.9,"sill":0}],"doorGap":0,"cuts":[],"inner":[{"orient":"v","x":8.1,"y":2.5,"len":3,"t":0.2,"attach":false}],"style":{"strokeWeight":5,"linejoin":"round","strokeColor":"#111111","floorFill":"#f0fde4","wallFill":"#ffffff","innerFill":"#ffffff","doorFill":"#f7f7f7","doorStroke":"#111111","windowFill":"#8ec5f0","windowStroke":"#111111","windowOpacity":0.35,"wallDepth":1,"openingWeight":3}}</metadata>
+  <g id="floor"><path d="M0 0 L17.9 0 L17.9 9.54 L16.5 9.54 L16.5 9.04 L16.4 9.04 L16.4 9.54 L14.2 9.54 L14.2 9.04 L0 9.04 Z" fill="#f0fde4" fill-rule="evenodd" stroke="none"/></g>
+  <defs>
+    <linearGradient id="door-fade-1" gradientUnits="userSpaceOnUse" x1="7.6" y1="0.03" x2="7.6" y2="-1"><stop offset="0" stop-color="#f0fde4" stop-opacity="1"/><stop offset="1" stop-color="#f0fde4" stop-opacity="0"/></linearGradient>
+  </defs>
+  <g id="doorways" stroke="none">
+    <path id="door-1" fill="url(#door-fade-1)" d="M6.5 0.03 L8.7 0.03 L8.7 -1 L6.5 -1 Z" data-wall="wall-N1" data-center="7.6 0" data-width="2.2" data-open="true"/>
+  </g>
+  <g id="walls-1" fill="#ffffff" stroke="#111111" stroke-width="0.05" stroke-linejoin="round" stroke-linecap="round">
+    <g id="wall-N1" data-facing="north" data-length="17.90">
+      <path d="M0 0 L6.5 0 L6.5 -1 L-1 -1 Z"/>
+      <path d="M8.7 0 L17.9 0 L18.9 -1 L8.7 -1 Z"/>
+    </g>
+    <g id="wall-W1" data-facing="west" data-length="9.04">
+      <path d="M0 0 L0 9.04 L-1 10.04 L-1 -1 Z"/>
+    </g>
+    <g id="wall-S1" data-facing="south" data-length="14.20">yes
+      <path d="M0 9.04 L14.2 9.04 L13.2 10.04 L-1 10.04 Z"/>
+    </g>
+    <g id="wall-S2" data-facing="south" data-length="2.20">yes
+      <path d="M14.2 9.54 L16.4 9.54 L17.4 10.54 L13.2 10.54 Z 
+               M14.2 9.54 L16.4 9.54 L17.3 10.44 L13.3 10.44 Z" fill-rule="evenodd"/>
+    </g>
+    <g id="wall-S4" data-facing="south" data-length="1.40">yes
+      <path d="M16.5 9.54 L17.9 9.54 L18.9 10.54 L17.5 10.54 Z"/>
+    </g>
+  </g>
+  <g id="doors-3" fill="#f7f7f7" stroke="#111111" stroke-width="0.03" stroke-linejoin="round">
+    <path id="door-3" d="M16.5 9.54 L17.9 9.54 L18.8 10.44 L17.4 10.44 Z" data-wall="wall-S4" data-center="17.2 9.54" data-width="1.4" data-open="false" data-height="0.9"/>
+  </g>
+  <g id="walls-2" fill="#ffffff" stroke="#111111" stroke-width="0.05" stroke-linejoin="round" stroke-linecap="round">
+    <g id="wall-W2" data-facing="west" data-length="0.50">
+      <path d="M14.2 9.04 L14.2 9.54 L13.2 10.54 L13.2 10.04 Z"/>
+    </g>    
+    <g id="wall-W3" data-facing="west" data-length="0.50">
+      <path d="M16.5 9.04 L16.5 9.54 L17.5 10.54 L17.5 10.04 Z"/>
+    </g>
+    <g id="wall-E1" data-facing="east" data-length="0.50">
+      <path d="M16.4 9.04 L16.4 9.54 L17.4 10.54 L17.4 10.04 Z"/>
+    </g>
+    <g id="wall-S3" data-facing="south" data-length="0.10">
+      <path d="M16.4 9.04 L16.5 9.04 L17.5 10.04 L17.4 10.04 Z"/>
+    </g>
+    <g id="wall-E2" data-facing="east" data-length="9.54">
+      <path d="M17.9 0 L17.9 9.54 L18.9 10.54 L18.9 -1 Z"/>
+    </g>
+  </g>
+  <g id="doors-2" fill="#f7f7f7" stroke="#111111" stroke-width="0.03" stroke-linejoin="round">
+    <path id="door-2" d="M11.95 9.04 L14.2 9.04 L13.2 10.04 L10.95 10.04 Z" data-wall="wall-S1" data-center="13.075 9.04" data-width="2.25" data-open="false" data-height="1"/>
+  </g>
+  <g id="windows" fill="#8ec5f0" fill-opacity="0.35" stroke="#111111" stroke-width="0.03" stroke-linejoin="round">
+    <path id="window-1" d="M14.2 9.54 L16.4 9.54 L17.3 10.44 L13.3 10.44 Z" data-wall="wall-S2" data-center="15.3 9.54" data-width="2.2" data-sill="0" data-height="0.9"/>
+  </g>
+  <g id="inner-walls">
+    <path d="M8.1 -2.5 L8.3 -2.5 L8.3 0.5 L8.1 0.5 Z" fill="#ffffff" fill-rule="evenodd" stroke="#111111" stroke-width="0.05" stroke-linejoin="round"/>
+    <path d="M17.4 10.04 L17.5 10.04 L17.5 10.54 L17.4 10.54 Z" fill="#ffffff" fill-rule="evenodd" stroke="#111111" stroke-width="0.05" stroke-linejoin="round"/>
+  </g>
+</svg>
